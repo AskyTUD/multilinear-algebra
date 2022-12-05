@@ -163,6 +163,11 @@ def getNames(ca_prim):
 
 
 def getPrimitives(ca_exp):
+    """
+    get from list of primitives from a casadi expression
+    :param ca_exp:
+    :return:
+    """
     help_prime = ca.Function('primitiv', [], ca_exp)
     return help_prime.free_sx()
 
