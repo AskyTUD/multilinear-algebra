@@ -1,7 +1,8 @@
 #
 #   This file is part of multilinear_algebra
 #
-#   multilinear_algebra is package providing methods for addition, multiplication, representation, etc., of multilinear objects
+#   multilinear_algebra is a package providing
+#   methods for addition, multiplication, representation, etc., of multilinear objects
 #
 #   Copyright (c) 2022 Andreas Himmel
 #                      All rights reserved
