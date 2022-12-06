@@ -1,10 +1,8 @@
 from setuptools import setup, find_packages
 
-exec(open('multilinear_algebra/version.py').read())
-
 setup(
     name='multilinear_algebra',
-    version=__version__,
+    version='1.0.0',
     packages=find_packages(),
     author='Andreas Himmel',
     author_email='andreas.himmel@iat.tu-darmstadt.de',
