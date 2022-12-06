@@ -154,7 +154,7 @@ class MLA:
         :param other:
         :return:
         """
-        flag_a, mode_a, info_a = MLA.check_type(self, other)  #MLA.check4compatibility(self, other)
+        flag_a, mode_a, info_a = MLA.check_type(self, other)
         if mode_a == 1:
             flag_b, mode_b, info_b = MLA.check_dimension(self, other)
             if mode_b == 1:
@@ -363,7 +363,7 @@ class MLA:
         return all(ele == self.dimension[0] for ele in self.dimension)
 
     @staticmethod
-    def print_multiplication(A, B):
+    def print_multiplication(self, other):
         """
         print the full multiplication table
         :param A:
@@ -379,27 +379,27 @@ class MLA:
         if mode_a == 3:
             print('not yet supported')
         if mode_a == 4:
-            n_dim = A.dimension[0]
-            flagE, sumOverIndices, residualIndices, residualIndicesOrder, type = MLA.is_Einstein_valid(A, B)
+            n_dim = self.dimension[0]
+            flagE, sumOverIndices, freeIndices, freeIndicesOrder, type = MLA.is_Einstein_valid(self, other)
 
             if flagE:
-                index_values_result = MLA.get_index_values(n_dim, len(residualIndices))
-                index_fun_result = lambda x: [val + str(x[i]) for i, val in enumerate(residualIndicesOrder)]
-                name_result = '(' + A.name + '*' + B.name + ')'
+                index_values_result = MLA.get_index_values(n_dim, len(freeIndices))
+                index_fun_result = lambda x: [val + str(x[i]) for i, val in enumerate(freeIndicesOrder)]
+                name_result = '(' + self.name + '*' + other.name + ')'
 
                 index_values_sumOver = MLA.get_index_values(n_dim, len(sumOverIndices))
-                index_fun_A = lambda x: [val + str(x[i]) for i, val in enumerate(A.index_order)]
-                index_fun_B = lambda x: [val + str(x[i]) for i, val in enumerate(B.index_order)]
+                index_fun_A = lambda x: [val + str(x[i]) for i, val in enumerate(self.index_order)]
+                index_fun_B = lambda x: [val + str(x[i]) for i, val in enumerate(other.index_order)]
 
-                get_a_index, get_b_index = MLA.get_index_projection(A, B, residualIndices, sumOverIndices)
+                get_a_index, get_b_index = MLA.get_index_projection(self, other, freeIndices, sumOverIndices)
                 tab_raw = []
                 for i_index in index_values_result:
                     help_sum = ''
                     for i_sum_index in index_values_sumOver:
                         a_ind = tuple(map(int, get_a_index(i_index, i_sum_index).full().tolist()[0]))
                         b_ind = tuple(map(int, get_b_index(i_index, i_sum_index).full().tolist()[0]))
-                        A_ind = A.name + ''.join(index_fun_A(list(a_ind)))
-                        B_ind = B.name + ''.join(index_fun_B(list(b_ind)))
+                        A_ind = self.name + ''.join(index_fun_A(list(a_ind)))
+                        B_ind = other.name + ''.join(index_fun_B(list(b_ind)))
                         help_sum += A_ind + ' ' + B_ind + '+'
                     help = [str(i_index), name_result + ''.join(index_fun_result(list(i_index))), help_sum[:-1]]
                     tab_raw.append(help)
