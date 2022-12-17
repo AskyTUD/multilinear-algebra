@@ -97,7 +97,10 @@ class TestOperation(unittest.TestCase):
         self.assertEqual(self.scalar1.val(), 2.0)
         with self.assertRaises(TypeError):
             self.objA1_ul.val()
-
+        x = [1e-5, 1e-3, 1e-1]
+        y = np.arccos(np.cos(x))
+        np.testing.assert_allclose(x, y, rtol=1e-5, atol=0)
+        
 
 
 if __name__ == '__main__':
