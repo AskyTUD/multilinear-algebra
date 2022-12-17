@@ -81,7 +81,6 @@ class TestOperation(unittest.TestCase):
     def test_addition_subtraction_error(self):
         with self.assertRaises(TypeError):
             self.objA1_ul + self.objA3_ll
-        with self.assertRaises(TypeError):
             self.objA3_ll + self.objA4_ll
         with self.assertRaises(TypeError):
             self.objA1_ul.id('ab') + self.objA1_ul.id('cd')
