@@ -68,11 +68,15 @@ class TestOperation(unittest.TestCase):
         self.assertEqual(S1.val(), 4.0)
         self.assertEqual(S2.val(), -6.0)
 
-        self.assertTrue(all(TestOperation.is_equal(B1_list, [2.0, 5.0, 6.4, 8.0])))
-        self.assertTrue(all(TestOperation.is_equal(B2_list, [-2.0, 2.7, -6.8, 6.0])))
+        np.testing.assert_allclose(B1_list, [2.0, 5.0, 6.4, 8.0])
+        np.testing.assert_allclose(B2_list, [-2.0, 2.7, -6.8, 6.0])
+        # self.assertTrue(all(TestOperation.is_equal(B1_list, [2.0, 5.0, 6.4, 8.0])))
+        # self.assertTrue(all(TestOperation.is_equal(B2_list, [-2.0, 2.7, -6.8, 6.0])))
 
-        self.assertTrue(all(TestOperation.is_equal(B3_list, [3.0, -0.2, 10.0, -2.0])))
-        self.assertTrue(all(TestOperation.is_equal(B4_list, [2.0, -2.7, 6.8, -6.0])))
+        np.testing.assert_allclose(B3_list, [3.0, -0.2, 10.0, -2.0])
+        np.testing.assert_allclose(B4_list, [2.0, -2.7, 6.8, -6.0])
+        # self.assertTrue(all(TestOperation.is_equal(B3_list, [3.0, -0.2, 10.0, -2.0])))
+        # self.assertTrue(all(TestOperation.is_equal(B4_list, [2.0, -2.7, 6.8, -6.0])))
 
     def test_addition_subtraction_error(self):
         with self.assertRaises(TypeError):
@@ -100,7 +104,7 @@ class TestOperation(unittest.TestCase):
         x = [1e-5, 1e-3, 1e-1]
         y = np.arccos(np.cos(x))
         np.testing.assert_allclose(x, y, rtol=1e-5, atol=0)
-        
+
 
 
 if __name__ == '__main__':
