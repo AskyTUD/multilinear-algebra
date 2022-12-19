@@ -21,8 +21,20 @@
 #   along with multilinear_algebra. If not, see <http://www.gnu.org/licenses/>.
 #
 
+import itertools as it
+
 import numpy as np
 from casadi import casadi as ca
+
+
+def get_index_values(n_dim, n_indices):
+    """
+    get the indices of the MLA object
+    :param n_dim:
+    :param n_indices:
+    :return:
+    """
+    return list(it.product(range(n_dim), repeat=n_indices))
 
 
 def size_casadi_vec(list):
