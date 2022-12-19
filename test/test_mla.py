@@ -1,45 +1,73 @@
+import os
+import sys
+
+currentdir = os.path.dirname(os.path.realpath(__file__))
+parentdir = os.path.dirname(currentdir)
+sys.path.append(parentdir)
+
 import unittest
 
-import multilinear_algebra as ma
+import casadi as ca
 import numpy as np
+
+import multilinear_algebra as ma
 
 
 class TestOperation(unittest.TestCase):
+    """This class provides several tests for the multialgebra module
+
+    Args    :
+        unittest (_type_): _description_
+    """
 
     def setUp(self) -> None:
         self.scalar1 = ma.MLA.scalar(2)
         self.scalar2 = ma.MLA.scalar(-4)
-        self.objA1_ul = ma.MLA(tensor_type=['^_'], name='A1', dim=2)
-        self.objA1_ul.values[(0, 0)] = 1.0
-        self.objA1_ul.values[(0, 1)] = 2.5
-        self.objA1_ul.values[(1, 0)] = 3.2
-        self.objA1_ul.values[(1, 1)] = 4.0
-        self.objA2_ul = ma.MLA(tensor_type=['^_'], name='A2', dim=2)
-        self.objA2_ul.values[(0, 0)] = -1.0
-        self.objA2_ul.values[(0, 1)] = 5.2
-        self.objA2_ul.values[(1, 0)] = -3.6
-        self.objA2_ul.values[(1, 1)] = 10.0
-        self.objA3_ll = ma.MLA(tensor_type=['__'], name='A3', dim=2)
-        self.objA3_ll.values[(0, 0)] = 1.0
-        self.objA3_ll.values[(0, 1)] = 5.2
-        self.objA3_ll.values[(1, 0)] = 3.6
-        self.objA3_ll.values[(1, 1)] = 5.4
-        self.objA4_ll = ma.MLA(tensor_type=['^_'], name='A4', dim=3)
+        self.objA1_ul = ma.MLA(tensor_type=["^_"], name="A1", dim=2)
+        self.objA1_ul.values[(0, 0)] = ca.DM(1.0)
+        self.objA1_ul.values[(0, 1)] = ca.DM(2.5)
+        self.objA1_ul.values[(1, 0)] = ca.DM(3.2)
+        self.objA1_ul.values[(1, 1)] = ca.DM(4.0)
+        self.objA2_ul = ma.MLA(tensor_type=["^_"], name="A2", dim=2)
+        self.objA2_ul.values[(0, 0)] = ca.DM(-1.0)
+        self.objA2_ul.values[(0, 1)] = ca.DM(5.2)
+        self.objA2_ul.values[(1, 0)] = ca.DM(-3.6)
+        self.objA2_ul.values[(1, 1)] = ca.DM(10.0)
+        self.objA3_ll = ma.MLA(tensor_type=["__"], name="A3", dim=2)
+        self.objA3_ll.values[(0, 0)] = ca.DM(1.0)
+        self.objA3_ll.values[(0, 1)] = ca.DM(5.2)
+        self.objA3_ll.values[(1, 0)] = ca.DM(3.6)
+        self.objA3_ll.values[(1, 1)] = ca.DM(5.4)
+        self.objA4_ll = ma.MLA(tensor_type=["^_"], name="A4", dim=3)
 
-    @ staticmethod
+    @staticmethod
     def is_equal(a_val, b_val):
-        return [True if abs(i_a - i_b) < 1e-8 else False for i_a, i_b in zip(a_val, b_val)]
+        """check if values in a_val close to that one in b_val"""
+        return [
+            True if abs(i_a - i_b) < 1e-8 else False for i_a, i_b in zip(a_val, b_val)
+        ]
 
     def test_dimension(self):
         pass
 
     def test_equality(self):
+        """
+        check for equality
+        """
         self.assertTrue(self.objA2_ul == self.objA2_ul)
         self.assertTrue(self.objA2_ul != self.objA1_ul)
         self.assertTrue(self.objA2_ul != self.objA3_ll)
 
     def test_initialization(self):
-        attr_set = {'dimension', 'index_order', 'indices', 'name', 'name_components', 'type', 'values'}
+        attr_set = {
+            "dimension",
+            "index_order",
+            "indices",
+            "name",
+            "name_components",
+            "type",
+            "values",
+        }
         for item in self.objA1_ul.__dict__:
             self.assertIn(item, attr_set)
 
@@ -49,7 +77,9 @@ class TestOperation(unittest.TestCase):
         check1_list = [i_val for i_val in check1.values.values()]
 
         self.assertEqual(check0.val(), -2.0)
-        self.assertTrue(all(TestOperation.is_equal(check1_list, [1.0, -5.2, 3.6, -10.0])))
+        self.assertTrue(
+            all(TestOperation.is_equal(check1_list, [1.0, -5.2, 3.6, -10.0]))
+        )
 
     def test_addition_subtraction(self):
         S1 = self.scalar1 + self.scalar1
@@ -60,7 +90,7 @@ class TestOperation(unittest.TestCase):
         B2 = -self.objA1_ul + self.objA2_ul
         B2_list = [i_val for i_val in B2.values.values()]
 
-        B3 = self.scalar1*self.objA1_ul - self.objA2_ul
+        B3 = self.scalar1 * self.objA1_ul - self.objA2_ul
         B3_list = [i_val for i_val in B3.values.values()]
         B4 = self.objA1_ul - self.objA2_ul
         B4_list = [i_val for i_val in B4.values.values()]
@@ -83,18 +113,20 @@ class TestOperation(unittest.TestCase):
             self.objA1_ul + self.objA3_ll
             self.objA3_ll + self.objA4_ll
         with self.assertRaises(TypeError):
-            self.objA1_ul.id('ab') + self.objA1_ul.id('cd')
+            self.objA1_ul.id("ab") + self.objA1_ul.id("cd")
         with self.assertRaises(TypeError):
-            self.objA1_ul.id('ab') - self.objA1_ul.id('cd')
+            self.objA1_ul.id("ab") - self.objA1_ul.id("cd")
 
     def test_naming(self):
-        self.assertEqual((self.objA1_ul.id('cf')+self.objA1_ul.id('cf')).name, '(A1+A1)')
-        test = self.objA1_ul.id('cf') + self.objA1_ul.id('cf')
-        test.rename('newVal')
-        self.assertEqual(test.name, 'newVal')
+        self.assertEqual(
+            (self.objA1_ul.id("cf") + self.objA1_ul.id("cf")).name, "(A1+A1)"
+        )
+        test = self.objA1_ul.id("cf") + self.objA1_ul.id("cf")
+        test.rename("newVal")
+        self.assertEqual(test.name, "newVal")
 
     def test_indexing(self):
-        self.assertEqual(self.objA1_ul.id('ab').indices, ['a', 'b'])
+        self.assertEqual(self.objA1_ul.id("ab").indices, ["a", "b"])
 
     def test_scalar_value(self):
         self.assertEqual(self.scalar1.val(), 2.0)
@@ -105,6 +137,5 @@ class TestOperation(unittest.TestCase):
         np.testing.assert_allclose(x, y, rtol=1e-5, atol=0)
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
