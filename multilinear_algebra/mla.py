@@ -298,6 +298,7 @@ class MLA:
         new_tensor.values = self.values
         return new_tensor
 
+
     def val(self):
         """
         returns the scalar value

@@ -24,12 +24,14 @@
 # import itertools as it
 
 import random as rd
-from typing import Optional
 
 # import numpy as np
 from casadi import casadi as ca
 
 import multilinear_algebra.efun as ef
+
+# import typing
+
 
 # import warnings
 
@@ -40,7 +42,7 @@ import multilinear_algebra.efun as ef
 class Tensor:
     """This class provides several methods to define and calculate with tensors"""
 
-    def __init__(self, **kwargs: Optional[dict]) -> None:
+    def __init__(self, **kwargs) -> None:
 
         self.dimension: list = []
         self.index_order: list = []
@@ -123,6 +125,33 @@ class Tensor:
 
     def __str__(self) -> str:
         return self.name_components
+
+    def rename(self, new_name: str) -> None:
+        """give the object a new name
+
+        Args:
+            new_name (str): _description_
+        """
+        help_val = self.name_components.split(self.name)[1]
+        self.name = new_name
+        self.name_components = new_name + help_val
+
+    def idx(self, new_index: str) -> None:
+        """give the object new indices
+
+        Args:
+            new_index (str): _description_
+
+        Raises:
+            IndexError: _description_
+        """
+        if len(self.index_order) != len(new_index):
+            raise IndexError("mismatch in the number of indices!")
+        type_indices = [
+            i_type + new_index[ii] for ii, i_type in enumerate(self.index_order)
+        ]
+        self.indices = list(new_index)
+        self.name_components = self.name + "".join(type_indices)
 
     def get_random_values(
         self, lower_bound: int = -10, upper_bound: int = 10, type: str = "general"
