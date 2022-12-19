@@ -21,12 +21,14 @@
 #   along with multilinear_algebra. If not, see <http://www.gnu.org/licenses/>.
 #
 
-import warnings
-import random as rd
 import itertools as it
+import random as rd
+import warnings
+
 import numpy as np
-from tabulate import tabulate
 from casadi import casadi as ca
+from tabulate import tabulate
+
 import multilinear_algebra.efun as ef
 
 
@@ -39,7 +41,7 @@ class MLA:
     -
     """
 
-    def __init__(self, tensor_type=[''], name='', dim=2, letterz=[]):
+    def __init__(self, tensor_type=[""], name="", dim=2, letterz=[]):
         """
         generate a multilinear object
         :param tensor_type: list containing a string -> ^ contravariant or _ covariant
@@ -54,16 +56,20 @@ class MLA:
 
         shape_val = [dim for i in tensor_type[0]] if isinstance(dim, int) else dim
         index_order = [i for i in tensor_type[0]]
-        indices = use_letterz[0:len(index_order)]
-        type_indices = [i_type + use_letterz[ii] for ii, i_type in enumerate(index_order)]
+        indices = use_letterz[0 : len(index_order)]
+        type_indices = [
+            i_type + use_letterz[ii] for ii, i_type in enumerate(index_order)
+        ]
         self.dimension = shape_val
         self.index_order = index_order
-        self.indices = indices    # ''.join(indices)
+        self.indices = indices  # ''.join(indices)
         self.name = name
-        self.name_components = name + ''.join(type_indices)
-        self.type = (index_order.count('^'), index_order.count('_'))
+        self.name_components = name + "".join(type_indices)
+        self.type = (index_order.count("^"), index_order.count("_"))
         indices_tot = MLA.get_index_values(dim, sum(self.type))
-        self.values = {i_index: ca.DM(0) for i_index in indices_tot}  # np.zeros(shape=shape_val)
+        self.values = {
+            i_index: ca.DM(0) for i_index in indices_tot
+        }  # np.zeros(shape=shape_val)
 
     def __repr__(self):
         return str(self.name_components)
@@ -86,7 +92,7 @@ class MLA:
         prim_list = ef.getPrimitives(components)
         prim_list_name = [i_prim.name() for i_prim in prim_list]
         prim_list_val = [kwargs[i_name] for i_name in prim_list_name]
-        comp_fun = ca.Function('evalComponents', prim_list, components)
+        comp_fun = ca.Function("evalComponents", prim_list, components)
         comp_val = comp_fun.call(prim_list_val)
         for id, key in enumerate(key_list):
             self.values[key] = comp_val[id]
@@ -99,7 +105,10 @@ class MLA:
         """
         if all(self.dimension) == all(other.dimension) and self.type == other.type:
             indices_val = MLA.get_index_values(self.dimension[0], np.sum(self.type))
-            bool_comp = [abs(self.values[i_index] - other.values[i_index]) < 1e-9 for i_index in indices_val]
+            bool_comp = [
+                abs(self.values[i_index] - other.values[i_index]) < 1e-9
+                for i_index in indices_val
+            ]
             if all(bool_comp):
                 return True
             else:
@@ -115,7 +124,11 @@ class MLA:
         if self.is_scalar():
             new_tensor = MLA.scalar(-self.values[()])
         else:
-            new_tensor = MLA(tensor_type=[''.join(self.index_order)], name='(-' + self.name + ')', dim=self.dimension[0])
+            new_tensor = MLA(
+                tensor_type=["".join(self.index_order)],
+                name="(-" + self.name + ")",
+                dim=self.dimension[0],
+            )
             for key, value in self.values.items():
                 new_tensor.values[key] = -value
 
@@ -127,7 +140,9 @@ class MLA:
         :param other:
         :return:
         """
-        flag_a, mode_a, info_a = MLA.check_type(self, other)  #MLA.check4compatibility(self, other)
+        flag_a, mode_a, info_a = MLA.check_type(
+            self, other
+        )  # MLA.check4compatibility(self, other)
         if mode_a == 1:
             flag_b, mode_b, info_b = MLA.check_dimension(self, other)
             if mode_b == 1:
@@ -135,17 +150,19 @@ class MLA:
             if mode_b == 4:
                 flag_c = MLA.is_addition_valid(self, other)
                 if flag_c:
-                    new_tensor = MLA(tensor_type=[''.join(self.index_order)],
-                                     name='(' + self.name + '+' + other.name + ')',
-                                     dim=self.dimension[0])
+                    new_tensor = MLA(
+                        tensor_type=["".join(self.index_order)],
+                        name="(" + self.name + "+" + other.name + ")",
+                        dim=self.dimension[0],
+                    )
                     for key, value in self.values.items():
                         new_tensor.values[key] = value + other.values[key]
                 else:
-                    raise TypeError('inconsistency of the indices of the MLA objects')
+                    raise TypeError("inconsistency of the indices of the MLA objects")
             if mode_b not in {1, 4}:
-                raise TypeError('inconsistency in the dimension of the MLA objects')
+                raise TypeError("inconsistency in the dimension of the MLA objects")
         else:
-            raise TypeError('inconsistency of MLA object types')
+            raise TypeError("inconsistency of MLA object types")
 
         return new_tensor
 
@@ -163,17 +180,19 @@ class MLA:
             if mode_b == 4:
                 flag_c = MLA.is_addition_valid(self, other)
                 if flag_c:
-                    new_tensor = MLA(tensor_type=[''.join(self.index_order)],
-                                     name='(' + self.name + '-' + other.name + ')',
-                                     dim=self.dimension[0])
+                    new_tensor = MLA(
+                        tensor_type=["".join(self.index_order)],
+                        name="(" + self.name + "-" + other.name + ")",
+                        dim=self.dimension[0],
+                    )
                     for key, value in self.values.items():
                         new_tensor.values[key] = value - other.values[key]
                 else:
-                    raise TypeError('inconsistency of the indices of the MLA objects')
+                    raise TypeError("inconsistency of the indices of the MLA objects")
             if mode_b not in {1, 4}:
-                raise TypeError('inconsistency in the dimension of the MLA objects')
+                raise TypeError("inconsistency in the dimension of the MLA objects")
         else:
-            raise TypeError('inconsistency of MLA object types')
+            raise TypeError("inconsistency of MLA object types")
 
         return new_tensor
 
@@ -187,44 +206,70 @@ class MLA:
         if mode_a == 1:
             new_tensor = MLA.scalar(self.values[()] * other.values[()])
         if mode_a == 2:
-            new_tensor = MLA(tensor_type=[''.join(other.index_order)],
-                             name='(' + self.name + '*' + other.name + ')',
-                             dim=other.dimension[0])
+            new_tensor = MLA(
+                tensor_type=["".join(other.index_order)],
+                name="(" + self.name + "*" + other.name + ")",
+                dim=other.dimension[0],
+            )
             for key, value in other.values.items():
                 new_tensor.values[key] = self.values[()] * value
         if mode_a == 3:
-            new_tensor = MLA(tensor_type=[''.join(self.index_order)],
-                             name='(' + other.name + '*' + self.name + ')',
-                             dim=self.dimension[0])
+            new_tensor = MLA(
+                tensor_type=["".join(self.index_order)],
+                name="(" + other.name + "*" + self.name + ")",
+                dim=self.dimension[0],
+            )
             for key, value in self.values.items():
                 new_tensor.values[key] = other.values[()] * value
         if mode_a == 4:
             n_dim = self.dimension[0]
 
-            flagE, sumOverIndices, freeIndices, freeIndicesOrder, type = MLA.is_Einstein_valid(self, other)
+            (
+                flagE,
+                sumOverIndices,
+                freeIndices,
+                freeIndicesOrder,
+                type,
+            ) = MLA.is_Einstein_valid(self, other)
 
             if flagE:
                 # generate raw object
-                new_tensor = MLA(tensor_type=[freeIndicesOrder],
-                                 name='(' + self.name + '*' + other.name + ')',
-                                 dim=n_dim,
-                                 letterz=''.join(freeIndices))
+                new_tensor = MLA(
+                    tensor_type=[freeIndicesOrder],
+                    name="(" + self.name + "*" + other.name + ")",
+                    dim=n_dim,
+                    letterz="".join(freeIndices),
+                )
 
-                get_a_index, get_b_index = MLA.get_index_projection(self, other, freeIndices, sumOverIndices)
+                get_a_index, get_b_index = MLA.get_index_projection(
+                    self, other, freeIndices, sumOverIndices
+                )
 
                 new_indices_val = MLA.get_index_values(n_dim, len(freeIndices))
                 sum_indices_val = MLA.get_index_values(n_dim, len(sumOverIndices))
                 for i_index in new_indices_val:
                     new_val_help = 0
                     for i_sum_index in sum_indices_val:
-                        a_ind = tuple(map(int, get_a_index(i_index, i_sum_index).full().tolist()[0]))
-                        b_ind = tuple(map(int, get_b_index(i_index, i_sum_index).full().tolist()[0]))
+                        a_ind = tuple(
+                            map(
+                                int,
+                                get_a_index(i_index, i_sum_index).full().tolist()[0],
+                            )
+                        )
+                        b_ind = tuple(
+                            map(
+                                int,
+                                get_b_index(i_index, i_sum_index).full().tolist()[0],
+                            )
+                        )
                         new_val_help += self.values[a_ind] * other.values[b_ind]
-                    new_tensor.values[i_index] = new_val_help
+                    new_tensor.values[i_index] = ca.DM(new_val_help)
             else:
-                raise TypeError('index mismatch; Einstein summation rule can not be applied!')
+                raise TypeError(
+                    "index mismatch; Einstein summation rule can not be applied!"
+                )
         if not flag_a:
-            raise TypeError('inconsistency in the dimension of the MLA objects')
+            raise TypeError("inconsistency in the dimension of the MLA objects")
 
         return new_tensor
 
@@ -244,7 +289,12 @@ class MLA:
         :param str:
         :return:
         """
-        new_tensor = MLA(tensor_type=[''.join(self.index_order)], name=self.name, dim=self.dimension[0], letterz=str)
+        new_tensor = MLA(
+            tensor_type=["".join(self.index_order)],
+            name=self.name,
+            dim=self.dimension[0],
+            letterz=str,
+        )
         new_tensor.values = self.values
         return new_tensor
 
@@ -256,9 +306,9 @@ class MLA:
         if self.is_scalar():
             return self.values[()]
         else:
-             raise TypeError(self.name + ' is not a scalar!')
+            raise TypeError(self.name + " is not a scalar!")
 
-    def get_random_values(self, lb=-10, ub=10, type='general'):
+    def get_random_values(self, lb=-10, ub=10, type="general"):
         """
         initialize an MLA object with random integer numbers
         :param lb:
@@ -266,13 +316,15 @@ class MLA:
         :param type:
         :return:
         """
-        if type == 'general':
+        if type == "general":
             index_values = MLA.get_index_values(self.dimension[0], len(self.indices))
             for i_index in index_values:
                 self.values[i_index] = ca.DM(rd.randint(lb, ub))
-        if type == 'quadratic_form':
-            if ''.join(self.index_order) == '__':
-                index_values = MLA.get_index_values(self.dimension[0], len(self.indices))
+        if type == "quadratic_form":
+            if "".join(self.index_order) == "__":
+                index_values = MLA.get_index_values(
+                    self.dimension[0], len(self.indices)
+                )
                 for i_index in index_values:
                     val = ca.DM(rd.randint(1, ub))
                     self.values[i_index] = val
@@ -288,7 +340,7 @@ class MLA:
         if N == 1:
             flag_symbolic = False
             A0 = ca.SX(np.zeros(self.dimension))
-            if self.index_order[0] == '_':
+            if self.index_order[0] == "_":
                 A0 = A0.T
             for ir in range(self.dimension[0]):
                 val = self.values[(ir,)]
@@ -306,7 +358,7 @@ class MLA:
                     A0[ir, ic] = val
         if N > 2:
             out = None
-            warnings.WarningMessage('noRuleToBuildAMatrix')
+            warnings.WarningMessage("noRuleToBuildAMatrix")
         out = A0 if flag_symbolic else ca.DM(A0)
 
         return out
@@ -318,17 +370,23 @@ class MLA:
         """
         N = len(self.indices)
         if N == 1:
-            new_type = ['_'] if self.index_order[0] == '^' else ['^']
-            new_tensor = MLA(tensor_type=new_type, name='(' + self.name + 'T)', dim=self.dimension[0])
+            new_type = ["_"] if self.index_order[0] == "^" else ["^"]
+            new_tensor = MLA(
+                tensor_type=new_type, name="(" + self.name + "T)", dim=self.dimension[0]
+            )
             for key, value in self.values.items():
                 new_tensor.values[key] = value
         if N == 2:
-            new_tensor = MLA(tensor_type=[''.join(self.index_order[::-1])], name='(' + self.name + 'T)', dim=self.dimension[0])
+            new_tensor = MLA(
+                tensor_type=["".join(self.index_order[::-1])],
+                name="(" + self.name + "T)",
+                dim=self.dimension[0],
+            )
             for key, value in self.values.items():
                 new_tensor.values[key] = self.values[tuple(reversed(key))]
         if N > 2:
             out = None
-            warnings.WarningMessage('noRule4Transpose')
+            warnings.WarningMessage("noRule4Transpose")
 
         return new_tensor
 
@@ -338,16 +396,24 @@ class MLA:
         :return:
         """
         if self.is_scalar():
-            tab_raw = [['', self.name, str(self.values[()])]]
+            tab_raw = [["", self.name, str(self.values[()])]]
         else:
-            index_values = list(it.product(range(self.dimension[0]), repeat=len(self.indices)))
-            index_fun = lambda x: [val + str(x[i]) for i, val in enumerate(self.index_order)]
+            index_values = list(
+                it.product(range(self.dimension[0]), repeat=len(self.indices))
+            )
+            index_fun = lambda x: [
+                val + str(x[i]) for i, val in enumerate(self.index_order)
+            ]
             tab_raw = []
             for i_index in index_values:
-                help = [str(i_index), self.name + ''.join(index_fun(list(i_index))), self.values[i_index].str()]
+                help = [
+                    str(i_index),
+                    self.name + "".join(index_fun(list(i_index))),
+                    self.values[i_index].str(),
+                ]
                 tab_raw.append(help)
 
-        print(tabulate(tab_raw, headers=['Index', 'Symbol', 'Value']))
+        print(tabulate(tab_raw, headers=["Index", "Symbol", "Value"]))
 
     def is_scalar(self):
         """
@@ -374,43 +440,73 @@ class MLA:
         # flag, mode, info = MLA.check4compatibility(A, B)
         flag_a, mode_a, info_a = MLA.check_dimension(self, other)
         if mode_a == 1:
-            print('not yet supported')
+            print("not yet supported")
         if mode_a == 2:
-            print('not yet supported')
+            print("not yet supported")
         if mode_a == 3:
-            print('not yet supported')
+            print("not yet supported")
         if mode_a == 4:
             n_dim = self.dimension[0]
-            flagE, sumOverIndices, freeIndices, freeIndicesOrder, type = MLA.is_Einstein_valid(self, other)
+            (
+                flagE,
+                sumOverIndices,
+                freeIndices,
+                freeIndicesOrder,
+                type,
+            ) = MLA.is_Einstein_valid(self, other)
 
             if flagE:
                 index_values_result = MLA.get_index_values(n_dim, len(freeIndices))
-                index_fun_result = lambda x: [val + str(x[i]) for i, val in enumerate(freeIndicesOrder)]
-                name_result = '(' + self.name + '*' + other.name + ')'
+                index_fun_result = lambda x: [
+                    val + str(x[i]) for i, val in enumerate(freeIndicesOrder)
+                ]
+                name_result = "(" + self.name + "*" + other.name + ")"
 
                 index_values_sumOver = MLA.get_index_values(n_dim, len(sumOverIndices))
-                index_fun_A = lambda x: [val + str(x[i]) for i, val in enumerate(self.index_order)]
-                index_fun_B = lambda x: [val + str(x[i]) for i, val in enumerate(other.index_order)]
+                index_fun_A = lambda x: [
+                    val + str(x[i]) for i, val in enumerate(self.index_order)
+                ]
+                index_fun_B = lambda x: [
+                    val + str(x[i]) for i, val in enumerate(other.index_order)
+                ]
 
-                get_a_index, get_b_index = MLA.get_index_projection(self, other, freeIndices, sumOverIndices)
+                get_a_index, get_b_index = MLA.get_index_projection(
+                    self, other, freeIndices, sumOverIndices
+                )
                 tab_raw = []
                 for i_index in index_values_result:
-                    help_sum = ''
+                    help_sum = ""
                     for i_sum_index in index_values_sumOver:
-                        a_ind = tuple(map(int, get_a_index(i_index, i_sum_index).full().tolist()[0]))
-                        b_ind = tuple(map(int, get_b_index(i_index, i_sum_index).full().tolist()[0]))
-                        A_ind = self.name + ''.join(index_fun_A(list(a_ind)))
-                        B_ind = other.name + ''.join(index_fun_B(list(b_ind)))
-                        help_sum += A_ind + ' ' + B_ind + '+'
-                    help = [str(i_index), name_result + ''.join(index_fun_result(list(i_index))), help_sum[:-1]]
+                        a_ind = tuple(
+                            map(
+                                int,
+                                get_a_index(i_index, i_sum_index).full().tolist()[0],
+                            )
+                        )
+                        b_ind = tuple(
+                            map(
+                                int,
+                                get_b_index(i_index, i_sum_index).full().tolist()[0],
+                            )
+                        )
+                        A_ind = self.name + "".join(index_fun_A(list(a_ind)))
+                        B_ind = other.name + "".join(index_fun_B(list(b_ind)))
+                        help_sum += A_ind + " " + B_ind + "+"
+                    help = [
+                        str(i_index),
+                        name_result + "".join(index_fun_result(list(i_index))),
+                        help_sum[:-1],
+                    ]
                     tab_raw.append(help)
-                print(tabulate(tab_raw, headers=['Index', 'Symbol', 'Value']))
+                print(tabulate(tab_raw, headers=["Index", "Symbol", "Value"]))
             else:
-                raise TypeError('index mismatch; Einstein summation rule can not be applied!')
+                raise TypeError(
+                    "index mismatch; Einstein summation rule can not be applied!"
+                )
         if not flag_a:
-            raise TypeError('inconsistency in the dimension of the MLA objects')
+            raise TypeError("inconsistency in the dimension of the MLA objects")
 
-    @ staticmethod
+    @staticmethod
     def get_index_values(n_dim, n_indices):
         """
         get the indices of the MLA object
@@ -420,19 +516,19 @@ class MLA:
         """
         return list(it.product(range(n_dim), repeat=n_indices))
 
-    @ staticmethod
-    def scalar(val, name='s'):
+    @staticmethod
+    def scalar(val, name="s"):
         """
         define a scalar MLA object
         :param val:
         :param name:
         :return:
         """
-        new_tensor = MLA(tensor_type=[''], name=name, dim=0)
+        new_tensor = MLA(tensor_type=[""], name=name, dim=0)
         new_tensor.values = {(): val}
         return new_tensor
 
-    @ staticmethod
+    @staticmethod
     def parameter(name):
         """
         define a symbolic parameter for an MLA object
@@ -441,8 +537,8 @@ class MLA:
         """
         return ca.SX.sym(name)
 
-    @ staticmethod
-    def get_Kronecker(tensor_type=[''], dim=2):
+    @staticmethod
+    def get_Kronecker(tensor_type=[""], dim=2):
         """
         get a Kronecker MLA object
         :param tensor_type:
@@ -452,10 +548,12 @@ class MLA:
         new_tensor = MLA(tensor_type=tensor_type, name=chr(948), dim=dim)
         indeces_val = MLA.get_index_values(dim, 2)
         for i_index in indeces_val:
-            new_tensor.values[i_index] = ca.DM(1) if i_index[0] == i_index[1] else ca.DM(0)
+            new_tensor.values[i_index] = (
+                ca.DM(1) if i_index[0] == i_index[1] else ca.DM(0)
+            )
         return new_tensor
 
-    @ staticmethod
+    @staticmethod
     def check_dimension(self, other):
         """
         check if both objects have the same dimensions
@@ -464,17 +562,21 @@ class MLA:
         :return:
         """
         if self.is_scalar() and other.is_scalar():
-            return True, 1, 'operateWith2Scalars'
+            return True, 1, "operateWith2Scalars"
         if self.is_scalar():
-            return True, 2, 'selfIsScalar'
+            return True, 2, "selfIsScalar"
         if other.is_scalar():
-            return True, 3, 'otherIsScalar'
-        if self.equal_dimension() and other.equal_dimension() and self.dimension[0] == other.dimension[0]:
-            return True, 4, 'matchingDimension'
+            return True, 3, "otherIsScalar"
+        if (
+            self.equal_dimension()
+            and other.equal_dimension()
+            and self.dimension[0] == other.dimension[0]
+        ):
+            return True, 4, "matchingDimension"
         else:
-            raise TypeError('dimension mismatch')
+            raise TypeError("dimension mismatch")
 
-    @ staticmethod
+    @staticmethod
     def check_type(self, other):
         """
         check if both objects have the same type
@@ -483,9 +585,9 @@ class MLA:
         :return:
         """
         if self.type == other.type:
-            return True, 1, '4mult_add'
+            return True, 1, "4mult_add"
         else:
-            return True, 2, '4mult'
+            return True, 2, "4mult"
 
     @staticmethod
     def is_addition_valid(self, other):
@@ -500,7 +602,7 @@ class MLA:
         else:
             return False
 
-    @ staticmethod
+    @staticmethod
     def is_Einstein_valid(self, other):
         """
         check if the Einstein rule for multiplication can be applied
@@ -516,21 +618,34 @@ class MLA:
                 a_help = self.indices.index(name)
                 b_help = other.indices.index(name)
                 if self.index_order[a_help] != other.index_order[b_help]:
-                    a_index_pos.append(a_help); b_index_pos.append(b_help)
+                    a_index_pos.append(a_help)
+                    b_index_pos.append(b_help)
                 else:
-                    return False, [], [], [], 'IndexMismatch;identicalIndexTypesAreFound'
-            type = 'contraction'
+                    return (
+                        False,
+                        [],
+                        [],
+                        [],
+                        "IndexMismatch;identicalIndexTypesAreFound",
+                    )
+            type = "contraction"
         else:
-            type = 'extension'
+            type = "extension"
 
-        new_types_fromA = [ix for ii, ix in enumerate(self.index_order) if ii not in a_index_pos]
-        new_types_fromB = [ix for ii, ix in enumerate(other.index_order) if ii not in b_index_pos]
-        residualIndicesOrder = ''.join(new_types_fromA + new_types_fromB)
-        residualIndices = [ix for ix in self.indices + other.indices if ix not in sumOverIndices]
+        new_types_fromA = [
+            ix for ii, ix in enumerate(self.index_order) if ii not in a_index_pos
+        ]
+        new_types_fromB = [
+            ix for ii, ix in enumerate(other.index_order) if ii not in b_index_pos
+        ]
+        residualIndicesOrder = "".join(new_types_fromA + new_types_fromB)
+        residualIndices = [
+            ix for ix in self.indices + other.indices if ix not in sumOverIndices
+        ]
 
         return True, sumOverIndices, residualIndices, residualIndicesOrder, type
 
-    @ staticmethod
+    @staticmethod
     def get_index_projection(self, other, freeIndices, sumOverIndices):
         """
         get function to map from a list of free and sumover indices to the one of the MLA objects
@@ -545,14 +660,56 @@ class MLA:
         tot_indices = freeIndices + sumOverIndices
         ind_letter = [ca.SX.sym(i_name) for i_name in tot_indices]
         # assign these indices to the elements
-        new_ind_letter = ca.hcat(ef.sort_ca_byList([i_letter for i_letter in ind_letter if i_letter.name() in freeIndices], freeIndices))
-        sum_ind_letter = ca.hcat(ef.sort_ca_byList([i_letter for i_letter in ind_letter if i_letter.name() in sumOverIndices], sumOverIndices))
-        a_ind_letter = ca.hcat(ef.sort_ca_byList([i_letter for i_letter in ind_letter if i_letter.name() in self.indices], self.indices))
-        b_ind_letter = ca.hcat(ef.sort_ca_byList([i_letter for i_letter in ind_letter if i_letter.name() in other.indices], other.indices))
+        new_ind_letter = ca.hcat(
+            ef.sort_ca_byList(
+                [i_letter for i_letter in ind_letter if i_letter.name() in freeIndices],
+                freeIndices,
+            )
+        )
+        sum_ind_letter = ca.hcat(
+            ef.sort_ca_byList(
+                [
+                    i_letter
+                    for i_letter in ind_letter
+                    if i_letter.name() in sumOverIndices
+                ],
+                sumOverIndices,
+            )
+        )
+        a_ind_letter = ca.hcat(
+            ef.sort_ca_byList(
+                [
+                    i_letter
+                    for i_letter in ind_letter
+                    if i_letter.name() in self.indices
+                ],
+                self.indices,
+            )
+        )
+        b_ind_letter = ca.hcat(
+            ef.sort_ca_byList(
+                [
+                    i_letter
+                    for i_letter in ind_letter
+                    if i_letter.name() in other.indices
+                ],
+                other.indices,
+            )
+        )
         # generate function to get the indices
-        get_a_index = ca.Function('get_a_index', [new_ind_letter, sum_ind_letter], [a_ind_letter],
-                                  ['freeIndices', 'sumOverIndices'], ['indicesOfA'])
-        get_b_index = ca.Function('get_b_index', [new_ind_letter, sum_ind_letter], [b_ind_letter],
-                                  ['freeIndices', 'sumOverIndices'], ['indicesOfB'])
+        get_a_index = ca.Function(
+            "get_a_index",
+            [new_ind_letter, sum_ind_letter],
+            [a_ind_letter],
+            ["freeIndices", "sumOverIndices"],
+            ["indicesOfA"],
+        )
+        get_b_index = ca.Function(
+            "get_b_index",
+            [new_ind_letter, sum_ind_letter],
+            [b_ind_letter],
+            ["freeIndices", "sumOverIndices"],
+            ["indicesOfB"],
+        )
 
         return get_a_index, get_b_index
