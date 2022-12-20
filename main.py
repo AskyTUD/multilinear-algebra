@@ -1,6 +1,9 @@
 import multilinear_algebra as ma
 
 if __name__ == "__main__":
+
+    # test_val: dict[str, list[str]] = {"server": ["A", "V"]}
+
     tensor1 = ma.Tensor(type="^_", dimension=2, name="A")
 
     tensor2 = ma.Tensor()
