@@ -17,6 +17,7 @@ if __name__ == "__main__":
     )
 
     tensor4 = ma.Tensor()
+    
     tensor4.initialize_tensor(
         {
             "type": "__",
@@ -24,7 +25,7 @@ if __name__ == "__main__":
             "name": "D",
         }
     )
-    tensor4.assign_values(values={(0, 0): 3, (0, 1): -3.5, (1, 0): 2.14, (1, 1): -0.3})
+    tensor4.assign_values(values={(0, 0): 3, (0, 1): -3.5, (1, 0): 2.14, (1, 2): -0.3})
     print(tensor4)
 
     tensor5 = ma.Tensor(type="^_", dimension=2, name="A")
