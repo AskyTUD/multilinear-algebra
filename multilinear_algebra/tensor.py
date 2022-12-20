@@ -107,7 +107,7 @@ class Tensor:
             indices_tot = ef.get_index_values(dimension_val[0], sum(self.type))
             self.values = {i_index: ca.DM(0) for i_index in indices_tot}
 
-    def assign_values(self, values: Dict[tuple, float]) -> None:
+    def assign_values(self, values: dict[tuple, float]) -> None:
         """assign to the tensor its values
 
         Args:
