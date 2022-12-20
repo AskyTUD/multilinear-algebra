@@ -51,6 +51,7 @@ class Tensor:
         self.name_components: str = ""
         self.type: tuple = ()
         self.values: dict = {}
+        self.is_initialized: bool = False
 
         if kwargs:
             self.initialize_tensor(kwargs)
@@ -98,6 +99,7 @@ class Tensor:
         self.name = tensor_attributes["name"]
         self.name_components = tensor_attributes["name"] + "".join(type_indices)
         self.type = (index_order.count("^"), index_order.count("_"))
+        self.is_initialized = True
         if "values" in tensor_attributes.keys():
             self.assign_values(tensor_attributes["values"])
         else:
@@ -106,17 +108,22 @@ class Tensor:
 
     def assign_values(self, values: dict) -> None:
         """assign to the tensor its values
+
         Args:
             values (dict): _description_
+
         Raises:
-            TypeError: _description_
+            IndexError: _description_
+            IndexError: _description_
         """
+        if not self.is_initialized:
+            raise IndexError("tensor is not initialized -> no tensor indices are known!")
         indices_tot = ef.get_index_values(self.dimension[0], sum(self.type))
         for i_index in indices_tot:
             if i_index in values.keys():
                 self.values[i_index] = ca.DM(values[i_index])
             else:
-                raise TypeError(
+                raise IndexError(
                     "Index " + str(i_index) + " is not an element of values!"
                 )
 
