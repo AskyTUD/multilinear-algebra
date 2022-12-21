@@ -107,7 +107,7 @@ class Tensor:
             indices_tot = ef.get_index_values(dimension_val[0], sum(self.type))
             self.values = {i_index: ca.DM(0) for i_index in indices_tot}
 
-    def assign_values(self, values: dict[tuple, float]) -> None:
+    def assign_values(self, values: Dict[tuple, float]) -> None:
         """assign to the tensor its values
 
         Args:
@@ -189,3 +189,25 @@ class Tensor:
                     self.values[tuple(reversed(i_index))] = val
             else:
                 raise TypeError("No quadratic form; use type=general!")
+
+    def __eq__(self, other) -> bool:
+        """compare two tensors if they are identical
+
+        Args:
+            other (_type_): _description_
+
+        Returns:
+            bool: _description_
+        """
+        if all(self.dimension) == all(other.dimension) and self.type == other.type:
+            indices_tot = ef.get_index_values(self.dimension[0], len(self.indices))
+            bool_comp = [
+                abs(self.values[i_index] - other.values[i_index]) < 1e-9
+                for i_index in indices_tot
+            ]
+            if all(bool_comp):
+                return True
+            else:
+                return False
+        else:
+            return False

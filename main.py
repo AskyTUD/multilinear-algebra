@@ -1,8 +1,12 @@
+from typing import NewType, Self, TypeVar
+
 import multilinear_algebra as ma
 
 if __name__ == "__main__":
+    # SelfShape = TypeVar("SelfShape", bound="Shape")
 
-    # test_val: dict[str, list[str]] = {"server": ["A", "V"]}
+    UserId = NewType('UserId', int)
+    some_id = UserId(524313)
 
     tensor1 = ma.Tensor(type="^_", dimension=2, name="A")
 
