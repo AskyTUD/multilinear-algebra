@@ -21,5 +21,5 @@
 #   along with multilinear_algebra. If not, see <http://www.gnu.org/licenses/>.
 #
 
-from multilinear_algebra.mla import MLA
+# from multilinear_algebra.mla import MLA
 from multilinear_algebra.tensor import Tensor

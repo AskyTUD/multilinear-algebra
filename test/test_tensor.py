@@ -5,9 +5,12 @@ import multilinear_algebra as ma
 #import casadi as ca
 #import numpy as np
 
-
-
 class TestOperation(unittest.TestCase):
+    """ test tensor class
+
+    Args:
+        unittest (_type_): _description_
+    """
     def setUp(self) -> None:
         self.tensor1 = ma.Tensor(type="^_", dimension=2, name="A")
         self.tensor2 = ma.Tensor()

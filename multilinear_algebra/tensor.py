@@ -21,23 +21,23 @@
 #   along with multilinear_algebra. If not, see <http://www.gnu.org/licenses/>.
 #
 
-# import itertools as it
-
 import random as rd
-from typing import Any, Dict, Self
+# import itertools as it
+from abc import ABCMeta, abstractmethod
+from typing import Any, Dict, NewType, TypeVar
 
 # import numpy as np
 from casadi import casadi as ca
 
-import multilinear_algebra.efun as ef
+from multilinear_algebra.efun import get_index_values
 
 # import warnings
-
-
 # from tabulate import tabulate
 
+Mu = TypeVar('Mu')
 
-class Tensor:
+
+class Tensor(metaclass=ABCMeta):
     """This class provides several methods to define and calculate with tensors"""
 
     def __init__(self, **kwargs: Any) -> None:
@@ -55,7 +55,7 @@ class Tensor:
             self.initialize_tensor(kwargs)
 
     def initialize_tensor(self, tensor_attributes: Dict[str, Any]) -> None:
-        """init the name, type and so on to the class attributes
+        """
 
         Args:
             tensor_attributes (dict): _description_
@@ -65,7 +65,8 @@ class Tensor:
         """
         needed_keys = ["type", "name", "dimension"]
         check = [
-            True if i_key in set(tensor_attributes.keys()) else False
+            bool(i_key in set(tensor_attributes.keys()))
+            # True if i_key in set(tensor_attributes.keys()) else False
             for i_key in needed_keys
         ]
         if not all(check):
@@ -101,14 +102,14 @@ class Tensor:
         if "values" in tensor_attributes.keys():
             self.assign_values(tensor_attributes["values"])
         else:
-            indices_tot = ef.get_index_values(dimension_val[0], sum(self.type))
+            indices_tot = get_index_values(dimension_val[0], sum(self.type))
             self.values = {i_index: ca.DM(0) for i_index in indices_tot}
 
     def assign_values(self, values: Dict[tuple, float]) -> None:
         """assign to the tensor its values
 
         Args:
-            values (dict): _description_
+            values (dict): dict of values
 
         Raises:
             IndexError: _description_
@@ -118,7 +119,7 @@ class Tensor:
             raise IndexError(
                 "tensor is not initialized -> no tensor indices are known!"
             )
-        indices_tot = ef.get_index_values(self.dimension[0], sum(self.type))
+        indices_tot = get_index_values(self.dimension[0], sum(self.type))
         for i_index in indices_tot:
             if i_index in values.keys():
                 self.values[i_index] = ca.DM(values[i_index])
@@ -137,7 +138,7 @@ class Tensor:
         """give the object a new name
 
         Args:
-            new_name (str): _description_
+            new_name (str): new name of the tensor
         """
         help_val = self.name_components.split(self.name)[1]
         self.name = new_name
@@ -147,7 +148,7 @@ class Tensor:
         """give the object new indices
 
         Args:
-            new_index (str): _description_
+            new_index (str): new indices
 
         Raises:
             IndexError: _description_
@@ -166,20 +167,20 @@ class Tensor:
         """get random numbers to initialize tensors
 
         Args:
-            lower_bound (int, optional): _description_. Defaults to 10.
-            upper_bound (int, optional): _description_. Defaults to 10.
-            type (str, optional): _description_. Defaults to "general".
+            lower_bound (int, optional): lower bound for the random generator. Defaults to 10.
+            upper_bound (int, optional): upper bound for the random gnerator. Defaults to 10.
+            type (str, optional): option between general and quadratic form. Defaults to "general".
 
         Raises:
             TypeError: _description_
         """
         if type == "general":
-            indices_tot = ef.get_index_values(self.dimension[0], len(self.indices))
+            indices_tot = get_index_values(self.dimension[0], len(self.indices))
             for i_index in indices_tot:
                 self.values[i_index] = ca.DM(rd.randint(lower_bound, upper_bound))
         if type == "quadratic_form":
             if "".join(self.index_order) == "__":
-                indices_tot = ef.get_index_values(self.dimension[0], len(self.indices))
+                indices_tot = get_index_values(self.dimension[0], len(self.indices))
                 for i_index in indices_tot:
                     val = ca.DM(rd.randint(1, upper_bound))
                     self.values[i_index] = val
@@ -187,7 +188,7 @@ class Tensor:
             else:
                 raise TypeError("No quadratic form; use type=general!")
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: Mu) -> bool:
         """compare two tensors if they are identical
 
         Args:
@@ -197,14 +198,14 @@ class Tensor:
             bool: _description_
         """
         if all(self.dimension) == all(other.dimension) and self.type == other.type:
-            indices_tot = ef.get_index_values(self.dimension[0], len(self.indices))
+            indices_tot = get_index_values(self.dimension[0], len(self.indices))
             bool_comp = [
                 abs(self.values[i_index] - other.values[i_index]) < 1e-9
                 for i_index in indices_tot
             ]
-            if all(bool_comp):
-                return True
-            else:
-                return False
-        else:
-            return False
+            return bool(all(bool_comp))
+            # if all(bool_comp):
+            #     return True
+            # else:
+            #     return False
+        return False
