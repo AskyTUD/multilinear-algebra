@@ -24,15 +24,12 @@
 # import itertools as it
 
 import random as rd
-from typing import Dict
+from typing import Any, Dict, Self
 
 # import numpy as np
 from casadi import casadi as ca
 
 import multilinear_algebra.efun as ef
-
-# import typing
-
 
 # import warnings
 
@@ -43,7 +40,7 @@ import multilinear_algebra.efun as ef
 class Tensor:
     """This class provides several methods to define and calculate with tensors"""
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, **kwargs: Any) -> None:
 
         self.dimension: list = []
         self.index_order: list = []
@@ -57,7 +54,7 @@ class Tensor:
         if kwargs:
             self.initialize_tensor(kwargs)
 
-    def initialize_tensor(self, tensor_attributes: dict) -> None:
+    def initialize_tensor(self, tensor_attributes: Dict[str, Any]) -> None:
         """init the name, type and so on to the class attributes
 
         Args:

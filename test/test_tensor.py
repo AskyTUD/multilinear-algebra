@@ -86,5 +86,10 @@ class TestOperation(unittest.TestCase):
         self.assertEqual(self.tensor1.name, new_name)
         self.assertEqual(self.tensor1.name_components, 'newA^a_b')
 
+    def test_equal(self):
+        self.assertTrue(self.tensor1 ==self.tensor1)
+        self.assertTrue(self.tensor1 != self.tensor2)
+
+
 if __name__ == "__main__":
     unittest.main()
