@@ -1,12 +1,6 @@
-from typing import NewType, Self, TypeVar
-
 import multilinear_algebra as ma
 
 if __name__ == "__main__":
-    # SelfShape = TypeVar("SelfShape", bound="Shape")
-
-    UserId = NewType('UserId', int)
-    some_id = UserId(524313)
 
     tensor1 = ma.Tensor(type="^_", dimension=2, name="A")
 
@@ -32,12 +26,14 @@ if __name__ == "__main__":
             "name": "D",
         }
     )
-    tensor4.assign_values(values={(0, 0): 3, (0, 1): -3.5, (1, 0): 2.14, (1, 2): -0.3})
+    tensor4.assign_values(values={(0, 0): 3, (0, 1): -3.5, (1, 0): 2.14, (1, 1): -0.3})
     print(tensor4)
+
+    tensor1 == tensor2
 
     tensor5 = ma.Tensor(type="^_", dimension=2, name="A")
     tensor5.get_random_values()
     tensor5.idx('ab')
 
 
-    print(ma.MLA.scalar(2))
+    # print(ma.MLA.scalar(2))
