@@ -24,7 +24,7 @@
 import itertools as it
 
 import numpy as np
-from casadi import casadi as ca
+from casadi import casadi as ca  # type: ignore
 
 
 def get_index_values(n_dim, n_indices):
@@ -67,7 +67,7 @@ def powerset(s):
     return out
 
 
-def truncate(P, A, direction='right'):
+def truncate(P, A, direction="right"):
     """
     cutting the sequence P at a specific value if it is also an element in A
     :param P: sequence (tuple) of numbers
@@ -76,14 +76,14 @@ def truncate(P, A, direction='right'):
     :return: a truncated sequence or the original ones
     """
     P_ = P.copy()
-    if direction == 'right':
+    if direction == "right":
         P_out = []
         for ip in P_:
             P_out.append(ip)
             if ip in A:
                 return P_out
 
-    if direction == 'left':
+    if direction == "left":
         P_out = []
         P_.reverse()
         for ip in P_:
@@ -99,24 +99,24 @@ def getColor(name):
     :param name:
     :return: colorcode
     """
-    if name == 'CCPSblue1':
-        return '#254061'
-    if name == 'CCPSblue2':
-        return '#386192'
-    if name == 'CCPSturquoise1':
-        return '#31859c'
-    if name == 'CCPSgray2':
-        return '#bfbfbf'
-    if name == 'CCPSred2':
-        return '#953735'
-    if name == 'CCPSgreen1':
-        return '#43503a'
-    if name == 'CCPSgreen2':
-        return '#aaab80'
-    if name == 'CCPSsand':
-        return '#ece9d4'
-    if name == 'CCPStext':
-        return '#383C3C'
+    if name == "CCPSblue1":
+        return "#254061"
+    if name == "CCPSblue2":
+        return "#386192"
+    if name == "CCPSturquoise1":
+        return "#31859c"
+    if name == "CCPSgray2":
+        return "#bfbfbf"
+    if name == "CCPSred2":
+        return "#953735"
+    if name == "CCPSgreen1":
+        return "#43503a"
+    if name == "CCPSgreen2":
+        return "#aaab80"
+    if name == "CCPSsand":
+        return "#ece9d4"
+    if name == "CCPStext":
+        return "#383C3C"
 
 
 def getListFromDictList(listOfDict, identifier, order, subOrder=None):
@@ -131,18 +131,20 @@ def getListFromDictList(listOfDict, identifier, order, subOrder=None):
     """
     OUT = []
     if subOrder:
-        subIdentifier = identifier[0] + '_order'
+        subIdentifier = identifier[0] + "_order"
 
         for idx, inode in enumerate(order):
-            pr = getProjection(listOfDict[inode-1].get(subIdentifier), subOrder[idx])
-            help = pr(listOfDict[inode - 1].get(identifier)).full().transpose().tolist()[0]
+            pr = getProjection(listOfDict[inode - 1].get(subIdentifier), subOrder[idx])
+            help = (
+                pr(listOfDict[inode - 1].get(identifier)).full().transpose().tolist()[0]
+            )
             OUT = OUT + help
     else:
         for inode in order:
-            if not isinstance(listOfDict[inode-1].get(identifier), list):
-                help = [listOfDict[inode-1].get(identifier)]
+            if not isinstance(listOfDict[inode - 1].get(identifier), list):
+                help = [listOfDict[inode - 1].get(identifier)]
             else:
-                help = listOfDict[inode-1].get(identifier)
+                help = listOfDict[inode - 1].get(identifier)
             OUT = OUT + help
     return OUT
 
@@ -154,12 +156,12 @@ def getProjection(dom, tar):
     :param tar: list
     :return:
     """
-    dom_prim = ca.SX.sym('dom', dom.__len__())
+    dom_prim = ca.SX.sym("dom", dom.__len__())
     tar_prim = []
     for idx, i_dom in enumerate(dom):
-       if i_dom in tar:
-           tar_prim = ca.vertcat(tar_prim, dom_prim[idx])
-    return ca.Function('projection', [dom_prim], [tar_prim])
+        if i_dom in tar:
+            tar_prim = ca.vertcat(tar_prim, dom_prim[idx])
+    return ca.Function("projection", [dom_prim], [tar_prim])
 
 
 def getNames(ca_prim):
@@ -170,9 +172,9 @@ def getNames(ca_prim):
     """
     if isinstance(ca_prim, ca.SX):
         NameList = [ielement.name() for ielement in ca_prim.elements()]
-        return ', '.join(NameList)
+        return ", ".join(NameList)
     else:
-        return ''
+        return ""
 
 
 def getPrimitives(ca_exp):
@@ -181,7 +183,7 @@ def getPrimitives(ca_exp):
     :param ca_exp:
     :return:
     """
-    help_prime = ca.Function('primitiv', [], ca_exp)
+    help_prime = ca.Function("primitiv", [], ca_exp)
     return help_prime.free_sx()
 
 
@@ -193,10 +195,16 @@ def getExpression(ca_fun, *argv):
     :return: dict_of_primitives, dict_of_expressions
     """
     if len(argv) < 1:
-        name = ['p'+str(i_in) for i_in in range(ca_fun.n_in())]
+        name = ["p" + str(i_in) for i_in in range(ca_fun.n_in())]
     else:
-        name = [argv[0][i_in] if i_in <= len(argv[0]) else 'p'+str(i_in) for i_in in range(ca_fun.n_in())]
-    primitives_name = {ca_fun.name_in(i_in): ca.SX.sym(name[i_in], ca_fun.nnz_in(i_in)) for i_in in range(ca_fun.n_in())}
+        name = [
+            argv[0][i_in] if i_in <= len(argv[0]) else "p" + str(i_in)
+            for i_in in range(ca_fun.n_in())
+        ]
+    primitives_name = {
+        ca_fun.name_in(i_in): ca.SX.sym(name[i_in], ca_fun.nnz_in(i_in))
+        for i_in in range(ca_fun.n_in())
+    }
     return primitives_name, ca_fun.call(primitives_name)
 
 
@@ -212,7 +220,7 @@ def getItem(dictList, identifier, value):
 
 
 def str2tup(string):
-    return eval(string.split('_')[1])
+    return eval(string.split("_")[1])
 
 
 def all_equal(iterator):
@@ -238,8 +246,8 @@ def get_permutation(list):
         for ic in range(len(sigma)):
             if sigma[ir] == ic:
                 PM[ir, ic] = 1
-    X = ca.SX.sym('X', len(sigma))
-    return ca.Function('permutation', [X], [np.matrix(PM)@X])
+    X = ca.SX.sym("X", len(sigma))
+    return ca.Function("permutation", [X], [np.matrix(PM) @ X])
 
 
 def sort_ca_byList(list1, list2):
