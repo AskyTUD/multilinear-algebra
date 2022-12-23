@@ -4,7 +4,7 @@
 optimization_test.py
 jupyter-notebook/multilinearAlgebra.ipynb
 mypy.ini
-
+pyproject.toml
 
 
 # Byte-compiled / optimized / DLL files
