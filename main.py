@@ -1,3 +1,5 @@
+import numpy as np
+
 import multilinear_algebra as ma
 
 if __name__ == "__main__":
@@ -18,7 +20,7 @@ if __name__ == "__main__":
     )
 
     tensor4 = ma.Tensor()
-    
+
     tensor4.initialize_tensor(
         {
             "type": "__",
@@ -33,7 +35,7 @@ if __name__ == "__main__":
 
     tensor5 = ma.Tensor(type="^_", dimension=2, name="A")
     tensor5.get_random_values()
-    tensor5.idx('ab')
+    tensor5.idx("ab")
 
-
+    tensor1.index_order
     # print(ma.MLA.scalar(2))
