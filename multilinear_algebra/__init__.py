@@ -27,7 +27,7 @@
 import multilinear_algebra.efun
 import multilinear_algebra.tensor
 
-TensorB = multilinear_algebra.tensor.TensorBasic
 Tensor = multilinear_algebra.tensor.Tensor
+# TensorB = multilinear_algebra.tensor.TensorBasic
 
-__all__ = ["Tensor", "TensorB"]
+__all__ = ["Tensor"]

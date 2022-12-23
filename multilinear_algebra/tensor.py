@@ -29,7 +29,7 @@
 
 
 import random as rd
-from typing import Any, Dict, TypeVar
+from typing import Any, Dict
 
 from casadi import casadi as ca  # type: ignore
 
@@ -130,10 +130,7 @@ class Tensor(TensorBasic):
         Tensor (_type_): _description_
     """
 
-    # def __init__(self, **kwargs: Any):
-    #     super(Tensor, self).__init__(**kwargs)
-
-    def rename(self, new_name: str) -> None:
+    def rename(self: TensorBasic, new_name: str) -> None:
         """give the object a new name
 
         Args:
@@ -143,7 +140,7 @@ class Tensor(TensorBasic):
         self.name = new_name
         self.name_components = new_name + help_val
 
-    def idx(self, new_index: str) -> None:
+    def idx(self: TensorBasic, new_index: str) -> None:
         """give the object new indices
 
         Args:
@@ -159,7 +156,7 @@ class Tensor(TensorBasic):
         self.name_components = self.name + "".join(type_indices)
 
     def get_random_values(
-        self, lower_bound: int = -10, upper_bound: int = 10, mode: str = "general"
+        self: TensorBasic, lower_bound: int = -10, upper_bound: int = 10, mode: str = "general"
     ) -> None:
         """get random numbers to initialize tensors
 
@@ -204,7 +201,7 @@ class Tensor(TensorBasic):
 
     def __add__(self: TensorBasic, other: TensorBasic) -> TensorBasic:
         new_tensor = Tensor()
-
+        self.values
         return new_tensor
 
 
