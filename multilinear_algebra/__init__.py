@@ -21,5 +21,13 @@
 #   along with multilinear_algebra. If not, see <http://www.gnu.org/licenses/>.
 #
 
+
 # from multilinear_algebra.mla import MLA
-from multilinear_algebra.tensor import Tensor
+# from multilinear_algebra.tensor import Tensor
+import multilinear_algebra.efun
+import multilinear_algebra.tensor
+
+TensorB = multilinear_algebra.tensor.TensorBasic
+Tensor = multilinear_algebra.tensor.Tensor
+
+__all__ = ["Tensor", "TensorB"]

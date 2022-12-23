@@ -21,23 +21,22 @@
 #   along with multilinear_algebra. If not, see <http://www.gnu.org/licenses/>.
 #
 
-import random as rd
 # import itertools as it
-from abc import ABCMeta, abstractmethod
-from typing import Any, Dict, NewType, TypeVar
-
+# from abc import ABCMeta, abstractmethod
 # import numpy as np
-from casadi import casadi as ca
-
-from multilinear_algebra.efun import get_index_values
-
 # import warnings
 # from tabulate import tabulate
 
-Mu = TypeVar('Mu')
+
+import random as rd
+from typing import Any, Dict, TypeVar
+
+from casadi import casadi as ca  # type: ignore
+
+from .efun import get_index_values
 
 
-class Tensor(metaclass=ABCMeta):
+class TensorBasic:
     """This class provides several methods to define and calculate with tensors"""
 
     def __init__(self, **kwargs: Any) -> None:
@@ -64,11 +63,7 @@ class Tensor(metaclass=ABCMeta):
             Exception: _description_
         """
         needed_keys = ["type", "name", "dimension"]
-        check = [
-            bool(i_key in set(tensor_attributes.keys()))
-            # True if i_key in set(tensor_attributes.keys()) else False
-            for i_key in needed_keys
-        ]
+        check = [bool(i_key in set(tensor_attributes.keys())) for i_key in needed_keys]
         if not all(check):
             raise Exception("need to define: type, name, dimension!")
 
@@ -79,8 +74,7 @@ class Tensor(metaclass=ABCMeta):
 
         if isinstance(tensor_attributes["dimension"], int):
             dimension_val = [
-                tensor_attributes["dimension"]
-                for i_type in list(tensor_attributes["type"])
+                tensor_attributes["dimension"] for i_type in list(tensor_attributes["type"])
             ]
         else:
             dimension_val = tensor_attributes["dimension"]
@@ -89,9 +83,7 @@ class Tensor(metaclass=ABCMeta):
 
         index_order = list(tensor_attributes["type"])
         use_indices = use_letterz[0 : len(index_order)]
-        type_indices = [
-            i_type + use_letterz[ii] for ii, i_type in enumerate(index_order)
-        ]
+        type_indices = [i_type + use_letterz[ii] for ii, i_type in enumerate(index_order)]
 
         self.index_order = index_order
         self.indices = use_indices
@@ -116,23 +108,30 @@ class Tensor(metaclass=ABCMeta):
             IndexError: _description_
         """
         if not self.is_initialized:
-            raise IndexError(
-                "tensor is not initialized -> no tensor indices are known!"
-            )
+            raise IndexError("tensor is not initialized -> no tensor indices are known!")
         indices_tot = get_index_values(self.dimension[0], sum(self.type))
         for i_index in indices_tot:
             if i_index in values.keys():
                 self.values[i_index] = ca.DM(values[i_index])
             else:
-                raise IndexError(
-                    "Index " + str(i_index) + " is not an element of values!"
-                )
+                raise IndexError("Index " + str(i_index) + " is not an element of values!")
 
     def __repr__(self) -> str:
         return self.name_components
 
     def __str__(self) -> str:
         return self.name_components
+
+
+class Tensor(TensorBasic):
+    """define all operations of a class
+
+    Args:
+        Tensor (_type_): _description_
+    """
+
+    # def __init__(self, **kwargs: Any):
+    #     super(Tensor, self).__init__(**kwargs)
 
     def rename(self, new_name: str) -> None:
         """give the object a new name
@@ -155,14 +154,12 @@ class Tensor(metaclass=ABCMeta):
         """
         if len(self.index_order) != len(new_index):
             raise IndexError("mismatch in the number of indices!")
-        type_indices = [
-            i_type + new_index[ii] for ii, i_type in enumerate(self.index_order)
-        ]
+        type_indices = [i_type + new_index[ii] for ii, i_type in enumerate(self.index_order)]
         self.indices = list(new_index)
         self.name_components = self.name + "".join(type_indices)
 
     def get_random_values(
-        self, lower_bound: int = -10, upper_bound: int = 10, type: str = "general"
+        self, lower_bound: int = -10, upper_bound: int = 10, mode: str = "general"
     ) -> None:
         """get random numbers to initialize tensors
 
@@ -174,11 +171,11 @@ class Tensor(metaclass=ABCMeta):
         Raises:
             TypeError: _description_
         """
-        if type == "general":
+        if mode == "general":
             indices_tot = get_index_values(self.dimension[0], len(self.indices))
             for i_index in indices_tot:
                 self.values[i_index] = ca.DM(rd.randint(lower_bound, upper_bound))
-        if type == "quadratic_form":
+        if mode == "quadratic_form":
             if "".join(self.index_order) == "__":
                 indices_tot = get_index_values(self.dimension[0], len(self.indices))
                 for i_index in indices_tot:
@@ -188,7 +185,7 @@ class Tensor(metaclass=ABCMeta):
             else:
                 raise TypeError("No quadratic form; use type=general!")
 
-    def __eq__(self, other: Mu) -> bool:
+    def __eq__(self, other) -> bool:
         """compare two tensors if they are identical
 
         Args:
@@ -200,12 +197,15 @@ class Tensor(metaclass=ABCMeta):
         if all(self.dimension) == all(other.dimension) and self.type == other.type:
             indices_tot = get_index_values(self.dimension[0], len(self.indices))
             bool_comp = [
-                abs(self.values[i_index] - other.values[i_index]) < 1e-9
-                for i_index in indices_tot
+                abs(self.values[i_index] - other.values[i_index]) < 1e-9 for i_index in indices_tot
             ]
             return bool(all(bool_comp))
-            # if all(bool_comp):
-            #     return True
-            # else:
-            #     return False
         return False
+
+    def __add__(self: TensorBasic, other: TensorBasic) -> TensorBasic:
+        new_tensor = Tensor()
+
+        return new_tensor
+
+
+# __all__ = ["Tensor"]
