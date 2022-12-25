@@ -47,8 +47,9 @@ class TensorBasic:
         self.name: str = ""
         self.name_components: str = ""
         self.type: tuple = ()
-        self.values: dict = {}
+        self.value: dict = {}
         self.is_initialized: bool = False
+        self.is_scalar: bool = False
 
         if kwargs:
             self.initialize_tensor(kwargs)
@@ -62,42 +63,60 @@ class TensorBasic:
         Raises:
             Exception: _description_
         """
-        needed_keys = ["type", "name", "dimension"]
-        check = [bool(i_key in set(tensor_attributes.keys())) for i_key in needed_keys]
-        if not all(check):
-            raise Exception("need to define: type, name, dimension!")
+        if not "name" in tensor_attributes.keys():
+            raise NameError("need to define a name!")
 
-        if "indices" in tensor_attributes.keys():
-            use_letterz = list(tensor_attributes["indices"])
-        else:
-            use_letterz = [chr(code) for code in range(945, 970)]
+        if len(tensor_attributes.keys()) == 1:
+            self.is_scalar = True
+            self.name = tensor_attributes["name"]
+            self.is_initialized = True
 
-        if isinstance(tensor_attributes["dimension"], int):
-            dimension_val = [
-                tensor_attributes["dimension"] for i_type in list(tensor_attributes["type"])
-            ]
-        else:
-            dimension_val = tensor_attributes["dimension"]
+        if "value" in tensor_attributes.keys():
+            if not isinstance(tensor_attributes["value"], dict):
+                self.is_scalar = True
+                self.name = tensor_attributes["name"]
+                self.value[()] = ca.DM(tensor_attributes["value"])
+                self.is_initialized = True
 
-        self.dimension = dimension_val
+        if not self.is_scalar:
+            needed_keys = ["type", "dimension"]
+            check = [bool(i_key in set(tensor_attributes.keys())) for i_key in needed_keys]
+            if not all(check):
+                raise NameError(
+                    "to initialize a tensor, the following properties are required: type, dimension!"
+                )
 
-        index_order = list(tensor_attributes["type"])
-        use_indices = use_letterz[0 : len(index_order)]
-        type_indices = [i_type + use_letterz[ii] for ii, i_type in enumerate(index_order)]
+            if "indices" in tensor_attributes.keys():
+                use_letterz = list(tensor_attributes["indices"])
+            else:
+                use_letterz = [chr(code) for code in range(945, 970)]
 
-        self.index_order = index_order
-        self.indices = use_indices
-        self.name = tensor_attributes["name"]
-        self.name_components = tensor_attributes["name"] + "".join(type_indices)
-        self.type = (index_order.count("^"), index_order.count("_"))
-        self.is_initialized = True
-        if "values" in tensor_attributes.keys():
-            self.assign_values(tensor_attributes["values"])
-        else:
-            indices_tot = get_index_values(dimension_val[0], sum(self.type))
-            self.values = {i_index: ca.DM(0) for i_index in indices_tot}
+            if isinstance(tensor_attributes["dimension"], int):
+                dimension_val = [
+                    tensor_attributes["dimension"] for i_type in list(tensor_attributes["type"])
+                ]
+            else:
+                dimension_val = tensor_attributes["dimension"]
 
-    def assign_values(self, values: Dict[tuple, float]) -> None:
+            self.dimension = dimension_val
+
+            index_order = list(tensor_attributes["type"])
+            use_indices = use_letterz[0 : len(index_order)]
+            type_indices = [i_type + use_letterz[ii] for ii, i_type in enumerate(index_order)]
+
+            self.index_order = index_order
+            self.indices = use_indices
+            self.name = tensor_attributes["name"]
+            self.name_components = tensor_attributes["name"] + "".join(type_indices)
+            self.type = (index_order.count("^"), index_order.count("_"))
+            self.is_initialized = True
+            if "value" in tensor_attributes.keys():
+                self.assign_values(value=tensor_attributes["value"])
+            else:
+                indices_tot = get_index_values(dimension_val[0], sum(self.type))
+                self.value = {i_index: ca.DM(0) for i_index in indices_tot}
+
+    def assign_values(self, value: Dict[tuple, float]) -> None:
         """assign to the tensor its values
 
         Args:
@@ -109,12 +128,15 @@ class TensorBasic:
         """
         if not self.is_initialized:
             raise IndexError("tensor is not initialized -> no tensor indices are known!")
-        indices_tot = get_index_values(self.dimension[0], sum(self.type))
-        for i_index in indices_tot:
-            if i_index in values.keys():
-                self.values[i_index] = ca.DM(values[i_index])
-            else:
-                raise IndexError("Index " + str(i_index) + " is not an element of values!")
+        if self.is_scalar:
+            self.value[()] = ca.DM(value[()])
+        else:
+            indices_tot = get_index_values(self.dimension[0], sum(self.type))
+            for i_index in indices_tot:
+                if i_index in value.keys():
+                    self.value[i_index] = ca.DM(value[i_index])
+                else:
+                    raise IndexError("Index " + str(i_index) + " is not an element of values!")
 
     def __repr__(self) -> str:
         return self.name_components
@@ -171,14 +193,14 @@ class Tensor(TensorBasic):
         if mode == "general":
             indices_tot = get_index_values(self.dimension[0], len(self.indices))
             for i_index in indices_tot:
-                self.values[i_index] = ca.DM(rd.randint(lower_bound, upper_bound))
+                self.value[i_index] = ca.DM(rd.randint(lower_bound, upper_bound))
         if mode == "quadratic_form":
             if "".join(self.index_order) == "__":
                 indices_tot = get_index_values(self.dimension[0], len(self.indices))
                 for i_index in indices_tot:
                     val = ca.DM(rd.randint(1, upper_bound))
-                    self.values[i_index] = val
-                    self.values[tuple(reversed(i_index))] = val
+                    self.value[i_index] = val
+                    self.value[tuple(reversed(i_index))] = val
             else:
                 raise TypeError("No quadratic form; use type=general!")
 
@@ -194,15 +216,33 @@ class Tensor(TensorBasic):
         if all(self.dimension) == all(other.dimension) and self.type == other.type:
             indices_tot = get_index_values(self.dimension[0], len(self.indices))
             bool_comp = [
-                abs(self.values[i_index] - other.values[i_index]) < 1e-9 for i_index in indices_tot
+                abs(self.value[i_index] - other.value[i_index]) < 1e-9 for i_index in indices_tot
             ]
             return bool(all(bool_comp))
         return False
 
     def __add__(self: TensorBasic, other: TensorBasic) -> TensorBasic:
+        if not Tensor.is_same_space(self, other):
+            raise TypeError("both tensors are not in the same space!")
+        if not Tensor.is_valid_indices(self, other):
+            pass
+
         new_tensor = Tensor()
-        self.values
         return new_tensor
 
+    @staticmethod
+    def is_same_space(tensor1: TensorBasic, tensor2: TensorBasic) -> bool:
+        """check if both tensors are of same dimension and type
 
-# __all__ = ["Tensor"]
+        Args:
+            tensor1 (TensorBasic): first tensor
+            tensor2 (TensorBasic): second tensor
+
+        Returns:
+            bool: are both tensors lie in the same space
+        """
+        return tensor1.dimension == tensor2.dimension and tensor1.type == tensor2.type
+
+    @staticmethod
+    def is_valid_indices(tensor1: TensorBasic, tensor2: TensorBasic) -> bool:
+        pass
