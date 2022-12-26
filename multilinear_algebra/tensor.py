@@ -27,9 +27,9 @@
 # import warnings
 # from tabulate import tabulate
 
-
 import random as rd
-from typing import Any, Dict
+from copy import deepcopy
+from typing import Any, Dict, Union
 
 from casadi import casadi as ca  # type: ignore
 
@@ -55,13 +55,14 @@ class TensorBasic:
             self.initialize_tensor(kwargs)
 
     def initialize_tensor(self, tensor_attributes: Dict[str, Any]) -> None:
-        """
+        """_summary_
 
         Args:
-            tensor_attributes (dict): _description_
+            tensor_attributes (Dict[str, Any]): contains properties
 
         Raises:
-            Exception: _description_
+            NameError: need to define a name!
+            NameError: to initialize a tensor, use properties: type, dimension!
         """
         if not "name" in tensor_attributes.keys():
             raise NameError("need to define a name!")
@@ -82,9 +83,7 @@ class TensorBasic:
             needed_keys = ["type", "dimension"]
             check = [bool(i_key in set(tensor_attributes.keys())) for i_key in needed_keys]
             if not all(check):
-                raise NameError(
-                    "to initialize a tensor, the following properties are required: type, dimension!"
-                )
+                raise NameError("to initialize a tensor, use properties: type, dimension!")
 
             if "indices" in tensor_attributes.keys():
                 use_letterz = list(tensor_attributes["indices"])
@@ -123,8 +122,8 @@ class TensorBasic:
             values (dict): dict of values
 
         Raises:
-            IndexError: _description_
-            IndexError: _description_
+            IndexError: tensor is not initialized -> no tensor indices are known!
+            IndexError: index (x1, x2) is not an element of values!
         """
         if not self.is_initialized:
             raise IndexError("tensor is not initialized -> no tensor indices are known!")
@@ -136,7 +135,7 @@ class TensorBasic:
                 if i_index in value.keys():
                     self.value[i_index] = ca.DM(value[i_index])
                 else:
-                    raise IndexError("Index " + str(i_index) + " is not an element of values!")
+                    raise IndexError("index " + str(i_index) + " is not an element of values!")
 
     def __repr__(self) -> str:
         return self.name_components
@@ -152,30 +151,46 @@ class Tensor(TensorBasic):
         Tensor (_type_): _description_
     """
 
-    def rename(self: TensorBasic, new_name: str) -> None:
+    def rename(self: TensorBasic, new_name: str, n_t: bool = False) -> Union[TensorBasic, None]:
         """give the object a new name
 
         Args:
+            self (TensorBasic): tensor
             new_name (str): new name of the tensor
+            n_t (bool, optional): generate a new instance. Defaults to False.
+
+        Returns:
+            Union[TensorBasic, None]: new tensor
         """
         help_val = self.name_components.split(self.name)[1]
         self.name = new_name
         self.name_components = new_name + help_val
 
-    def idx(self: TensorBasic, new_index: str) -> None:
+        if n_t:
+            return deepcopy(self)
+
+    def idx(self: TensorBasic, new_index: str, n_t: bool = False) -> Union[TensorBasic, None]:
         """give the object new indices
 
         Args:
+            self (TensorBasic): tensor
             new_index (str): new indices
+            n_t (bool, optional): generate a new instance. Defaults to False.
 
         Raises:
-            IndexError: _description_
+            IndexError: mismatch in the number of indices!
+
+        Returns:
+            Union[TensorBasic, None]: new tensor
         """
         if len(self.index_order) != len(new_index):
             raise IndexError("mismatch in the number of indices!")
         type_indices = [i_type + new_index[ii] for ii, i_type in enumerate(self.index_order)]
         self.indices = list(new_index)
         self.name_components = self.name + "".join(type_indices)
+
+        if n_t:
+            return deepcopy(self)
 
     def get_random_values(
         self: TensorBasic, lower_bound: int = -10, upper_bound: int = 10, mode: str = "general"
@@ -221,14 +236,94 @@ class Tensor(TensorBasic):
             return bool(all(bool_comp))
         return False
 
-    def __add__(self: TensorBasic, other: TensorBasic) -> TensorBasic:
-        if not Tensor.is_same_space(self, other):
-            raise TypeError("both tensors are not in the same space!")
-        if not Tensor.is_valid_indices(self, other):
+    def __neg__(self: TensorBasic) -> TensorBasic:
+        """get the negative MLA object by inverting the sign of each component
+
+        Args:
+            self (TensorBasic): tensor
+
+        Returns:
+            TensorBasic: tensor with negative value
+        """
+        if self.is_scalar:
+            return Tensor(name="(-" + self.name + ")", value=-self.value[()])
+
+        new_tensor = Tensor(
+            type="".join(self.index_order),
+            name="(-" + self.name + ")",
+            dimension=self.dimension,
+        )
+        for key, value in self.value.items():
+            new_tensor.value[key] = -value
+        return new_tensor
+
+    def __add__(self: TensorBasic, other: TensorBasic) -> Union[TensorBasic, None]:
+        """calculate the sum of two tensors
+
+        Args:
+            self (TensorBasic): first tensor
+            other (TensorBasic): second tensor
+
+        Raises:
+            TypeError: invalid addition of scalar and tensor!
+            TypeError: both tensors are not in the same space!
+            TypeError: indices of the two tensors do not match!
+
+        Returns:
+            Union[TensorBasic, None]: new tensor
+        """
+
+        if self.is_scalar != other.is_scalar:
+            raise TypeError("invalid addition of scalar and tensor!")
+
+        if self.is_scalar and other.is_scalar:
+            return Tensor(
+                name="(" + self.name + "+" + other.name + ")",
+                value=self.value[()] + other.value[()],
+            )
+
+        if not self.is_scalar and not other.is_scalar:
+            if not Tensor.is_same_space(self, other):
+                raise TypeError("both tensors are not in the same space!")
+            if not Tensor.is_valid_indices(self, other, mode="addition"):
+                raise TypeError("indices of the two tensors do not match!")
+
+            new_tensor = Tensor(
+                type="".join(self.index_order),
+                name="(" + self.name + "+" + other.name + ")",
+                dimension=self.dimension,
+            )
+            for key, value in self.value.items():
+                new_tensor.value[key] = value + other.value[key]
+            return new_tensor
+
+    def __sub__(self: TensorBasic, other: TensorBasic) -> Union[TensorBasic, None]:
+        """calculate the difference of two tensors
+
+        Args:
+            self (TensorBasic): first tensor
+            other (TensorBasic): second tensor
+
+        Returns:
+            TensorBasic: new tensor
+        """
+        return self + -other
+
+    def __mul__(self: TensorBasic, other: TensorBasic) -> Union[TensorBasic, None]:
+
+        if self.is_scalar and not other.is_scalar:
             pass
 
-        new_tensor = Tensor()
-        return new_tensor
+        if not self.is_scalar and other.is_scalar:
+            pass
+
+        if self.is_scalar and other.is_scalar:
+            return Tensor(
+                name="(" + self.name + other.name + ")", value=self.value[()] * other.value[()]
+            )
+
+        if not self.is_scalar and not other.is_scalar:
+            pass
 
     @staticmethod
     def is_same_space(tensor1: TensorBasic, tensor2: TensorBasic) -> bool:
@@ -244,5 +339,18 @@ class Tensor(TensorBasic):
         return tensor1.dimension == tensor2.dimension and tensor1.type == tensor2.type
 
     @staticmethod
-    def is_valid_indices(tensor1: TensorBasic, tensor2: TensorBasic) -> bool:
-        pass
+    def is_valid_indices(tensor1: TensorBasic, tensor2: TensorBasic, mode: str) -> bool:
+        """
+        check if the Einstein rule for multiplication can be applied
+        :param self:
+        :param other:
+        :return:
+        """
+        if mode == "addition":
+            # indices of both terms must match
+            return bool(
+                tensor1.index_order == tensor2.index_order and tensor1.indices == tensor2.indices
+            )
+        if mode == "multiplication":
+            # same indices must be of different types
+            return bool(True)

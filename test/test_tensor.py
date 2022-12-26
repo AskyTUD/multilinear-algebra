@@ -83,7 +83,7 @@ class TestOperation(unittest.TestCase):
         with self.assertRaises(NameError) as context2:
             tensor1.initialize_tensor({"typ": "_", "name": "a"})
         self.assertEqual(
-            "to initialize a tensor, the following properties are required: type, dimension!",
+            "to initialize a tensor, use properties: type, dimension!",
             str(context2.exception),
         )
 
