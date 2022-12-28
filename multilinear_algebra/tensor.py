@@ -1,3 +1,4 @@
+""" tensor module to generate and calculate with tensors """
 #
 #   This file is part of multilinear_algebra
 #
@@ -20,6 +21,7 @@
 #   You should have received a copy of the GNU Lesser General Public License
 #   along with multilinear_algebra. If not, see <http://www.gnu.org/licenses/>.
 #
+
 
 # import itertools as it
 # from abc import ABCMeta, abstractmethod

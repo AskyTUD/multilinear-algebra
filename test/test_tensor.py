@@ -124,7 +124,7 @@ class TestOperation(unittest.TestCase):
         new_indices = "ab"
         self.tensor1.idx(new_indices)
         self.assertEqual("".join(self.tensor1.indices), new_indices)
-        self.assertEqual(self.tensor1.name_components, "A^a_b")
+        self.assertEqual(self.tensor1.name_components, "X^a_b")
 
         self.tensor1.rename(new_name)
         self.assertEqual(self.tensor1.name, new_name)
@@ -203,7 +203,17 @@ class TestOperation(unittest.TestCase):
         )
 
     def test_multiplication(self):
-        pass
+        prod_A = self.tensor1.idx("ab", n_t=True) * self.tensor_A.idx("bc", n_t=True)
+        val_prod_A = [np.array(i_val) for i_val in prod_A.value.values()]
+        val_prod_A_ref = [np.array([[i_val]]) for i_val in [-0.05, -8.25, 14.85, 8.2]]
+        np.testing.assert_allclose(val_prod_A_ref, val_prod_A)
+
+        with self.assertRaises(TypeError) as context:
+            self.tensor1.idx("ba", n_t=True) * self.tensor_A.idx("bc", n_t=True)
+        self.assertEqual(
+            "indices are not suitable for multiplication!",
+            str(context.exception),
+        )
 
     def test_is_same_space(self):
         pass
