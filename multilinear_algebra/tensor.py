@@ -27,11 +27,13 @@
 # import warnings
 # from tabulate import tabulate
 
+import itertools as it
 import random as rd
 from copy import deepcopy
 from typing import Any, Dict, List, Tuple, Union
 
 from casadi import casadi as ca  # type: ignore
+from tabulate import tabulate
 
 from .efun import get_index_values, sort_ca_byList
 
@@ -220,6 +222,48 @@ class Tensor(TensorBasic):
                     self.value[tuple(reversed(i_index))] = val
             else:
                 raise TypeError("No quadratic form; use type=general!")
+
+    def val(self: TensorBasic) -> Union[float, None]:
+        """returns the scalar value
+
+        Raises:
+            TypeError: xxx is not a scalar!
+
+        Returns:
+            _type_: value of a scalar
+        """
+        if self.is_scalar:
+            return self.value[()].full()
+        raise TypeError(self.name + " is not a scalar!")
+
+    def print_components(self: TensorBasic) -> None:
+        """list all the individual components in a table
+
+        Args:
+            self (TensorBasic): tensor
+
+        Returns:
+            _type_: table of components
+        """
+        if self.is_scalar:
+            tab_raw = [["", self.name, str(self.value[()])]]
+        else:
+            index_values = list(it.product(range(self.dimension[0]), repeat=len(self.indices)))
+
+            def index_fun(index_list: list) -> list:
+                return [val + str(index_list[i]) for i, val in enumerate(self.index_order)]
+
+            # index_fun = lambda x: [val + str(x[i]) for i, val in enumerate(self.index_order)]
+            tab_raw = []
+            for i_index in index_values:
+                help_flag = [
+                    str(i_index),
+                    self.name + "".join(index_fun(list(i_index))),
+                    self.value[i_index].str(),
+                ]
+                tab_raw.append(help_flag)
+
+        print(tabulate(tab_raw, headers=["Index", "Symbol", "Value"]))
 
     def __eq__(self, other) -> bool:
         """compare two tensors if they are identical

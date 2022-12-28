@@ -21,7 +21,11 @@ if __name__ == "__main__":
         value={(0, 0): 1.1, (0, 1): -1.8, (1, 0): -1.5, (1, 1): 2.5},
     )
 
-    bla = tensor2.idx("ba", n_t=True) * tensor1.idx("bc", n_t=True)
+    tensor1.idx("bc")
+    tensor2.idx("ab")
+    bla = tensor2 * tensor1
+
+    bla.print_components()
 
     tensor2.idx("ab")
     tensor1.idx("bc")
