@@ -1,4 +1,4 @@
 casadi==3.5.5.post2
 numpy==1.22.4
-setuptools==62.6.0
+setuptools==65.5.1
 tabulate==0.8.10
