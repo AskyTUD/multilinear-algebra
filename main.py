@@ -21,10 +21,7 @@ if __name__ == "__main__":
         value={(0, 0): 1.1, (0, 1): -1.8, (1, 0): -1.5, (1, 1): 2.5},
     )
 
-    vvv = tensor2 - tensor1
-
-    neg_tensor = -tensor1
-    bla = tensor2.idx("ab", n_t=True) * tensor1.idx("bc", n_t=True)
+    bla = tensor2.idx("ba", n_t=True) * tensor1.idx("bc", n_t=True)
 
     tensor2.idx("ab")
     tensor1.idx("bc")

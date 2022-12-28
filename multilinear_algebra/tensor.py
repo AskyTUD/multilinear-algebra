@@ -29,11 +29,13 @@
 
 import random as rd
 from copy import deepcopy
-from typing import Any, Dict, Union
+from typing import Any, Dict, List, Tuple, Union
 
 from casadi import casadi as ca  # type: ignore
 
-from .efun import get_index_values
+from .efun import get_index_values, sort_ca_byList
+
+Einstein = Tuple[List[str], List[str], str, List[str]]
 
 
 class TensorBasic:
@@ -310,20 +312,75 @@ class Tensor(TensorBasic):
         return self + -other
 
     def __mul__(self: TensorBasic, other: TensorBasic) -> Union[TensorBasic, None]:
+        """multiplication of two tensors
 
-        if self.is_scalar and not other.is_scalar:
-            pass
+        Args:
+            self (TensorBasic): first tensor
+            other (TensorBasic): second tensor
 
-        if not self.is_scalar and other.is_scalar:
-            pass
+        Raises:
+            TypeError: indices are not suitable for multiplication!
+
+        Returns:
+            Union[TensorBasic, None]: product of the two tensors
+        """
 
         if self.is_scalar and other.is_scalar:
             return Tensor(
                 name="(" + self.name + other.name + ")", value=self.value[()] * other.value[()]
             )
 
+        if self.is_scalar and not other.is_scalar:
+            new_tensor = Tensor(
+                type="".join(other.index_order),
+                name="(" + self.name + other.name + ")",
+                dimension=other.dimension[0],
+                indices="".join(other.indices),
+            )
+            for key, value in other.value.items():
+                new_tensor.value[key] = self.value[()] * value
+            return new_tensor
+
+        if not self.is_scalar and other.is_scalar:
+            new_tensor = Tensor(
+                type="".join(self.index_order),
+                name="(" + other.name + self.name + ")",
+                dimension=self.dimension[0],
+                indices="".join(self.indices),
+            )
+            for key, value in self.value.items():
+                new_tensor.value[key] = other.value[()] * value
+            return new_tensor
+
         if not self.is_scalar and not other.is_scalar:
-            pass
+            if Tensor.is_valid_indices(self, other, mode="multiplication"):
+                sum_over, free_indices, free_indices_order, _ = Tensor.get_indice_list(self, other)
+                new_tensor = Tensor(
+                    type=free_indices_order,
+                    name="(" + self.name + "*" + other.name + ")",
+                    dimension=self.dimension[0],
+                    indices="".join(free_indices),
+                )
+
+                get_ten1_idx, get_ten2_idx = Tensor.get_index_projection(
+                    self, other, free_indices, sum_over
+                )
+
+                new_indices_val = get_index_values(self.dimension[0], len(free_indices))
+                sum_indices_val = get_index_values(self.dimension[0], len(sum_over))
+                for i_index in new_indices_val:
+                    new_val_help = 0
+                    for i_sum_index in sum_indices_val:
+                        a_ind = tuple(
+                            map(int, get_ten1_idx(i_index, i_sum_index).full().tolist()[0])
+                        )
+                        b_ind = tuple(
+                            map(int, get_ten2_idx(i_index, i_sum_index).full().tolist()[0])
+                        )
+                        new_val_help += self.value[a_ind] * other.value[b_ind]
+                    new_tensor.value[i_index] = ca.DM(new_val_help)
+                return new_tensor
+            raise TypeError("indices are not suitable for multiplication!")
 
     @staticmethod
     def is_same_space(tensor1: TensorBasic, tensor2: TensorBasic) -> bool:
@@ -353,4 +410,104 @@ class Tensor(TensorBasic):
             )
         if mode == "multiplication":
             # same indices must be of different types
-            return bool(True)
+            _, _, _, unset_indices = Tensor.get_indice_list(tensor1, tensor2)
+            if unset_indices:
+                return False
+            return True
+        return False
+
+    @staticmethod
+    def get_indice_list(tensor1: TensorBasic, tensor2: TensorBasic) -> Einstein:
+        """check for free indices and those to be used for summation
+
+        Args:
+            tensor1 (TensorBasic): first tensor
+            tensor2 (TensorBasic): second tensor
+
+        Returns:
+            Einstein: tuple of indice information
+        """
+        sum_over = list(set(tensor1.indices).intersection(tensor2.indices))
+        tensor1_idx_pos = []
+        tensor2_idx_pos = []
+        unset_indices = []
+        if sum_over:
+            for name in sum_over:
+                ten1_help = tensor1.indices.index(name)
+                ten2_help = tensor2.indices.index(name)
+                if tensor1.index_order[ten1_help] != tensor2.index_order[ten2_help]:
+                    tensor1_idx_pos.append(ten1_help)
+                    tensor2_idx_pos.append(ten2_help)
+                else:
+                    unset_indices.append(name)
+
+        new_types_tensor1 = [
+            ix for ii, ix in enumerate(tensor1.index_order) if ii not in tensor1_idx_pos
+        ]
+        new_types_tensor2 = [
+            ix for ii, ix in enumerate(tensor2.index_order) if ii not in tensor2_idx_pos
+        ]
+        free_indices_order = "".join(new_types_tensor1 + new_types_tensor2)
+        free_indices = [ix for ix in tensor1.indices + tensor2.indices if ix not in sum_over]
+
+        return sum_over, free_indices, free_indices_order, unset_indices
+
+    @staticmethod
+    def get_index_projection(
+        tensor1: TensorBasic, tensor2: TensorBasic, free_indices: List[str], sum_over: List[str]
+    ) -> Tuple[ca.Function, ca.Function]:
+        """generate projection maps for multiplication
+
+        Args:
+            tensor1 (TensorBasic): first tensor
+            tensor2 (TensorBasic): second tensor
+            free_indices (List[str]): indices of the new tensor
+            sum_over (List[str]): indices used for summation
+
+        Returns:
+            Tuple[ca.Function, ca.Function]: projection maps for both tensors
+        """
+        # generate indices for summation
+        tot_indices = free_indices + sum_over
+        ind_letter = [ca.SX.sym(i_name) for i_name in tot_indices]
+        # assign these indices to the elements
+        new_ind_letter = ca.hcat(
+            sort_ca_byList(
+                [i_letter for i_letter in ind_letter if i_letter.name() in free_indices],
+                free_indices,
+            )
+        )
+        sum_ind_letter = ca.hcat(
+            sort_ca_byList(
+                [i_letter for i_letter in ind_letter if i_letter.name() in sum_over], sum_over
+            )
+        )
+        a_ind_letter = ca.hcat(
+            sort_ca_byList(
+                [i_letter for i_letter in ind_letter if i_letter.name() in tensor1.indices],
+                tensor1.indices,
+            )
+        )
+        b_ind_letter = ca.hcat(
+            sort_ca_byList(
+                [i_letter for i_letter in ind_letter if i_letter.name() in tensor2.indices],
+                tensor2.indices,
+            )
+        )
+        # generate function to get the indices
+        get_ten1_idx = ca.Function(
+            "get_a_index",
+            [new_ind_letter, sum_ind_letter],
+            [a_ind_letter],
+            ["freeIndices", "sumOverIndices"],
+            ["indicesOfA"],
+        )
+        get_ten2_idx = ca.Function(
+            "get_b_index",
+            [new_ind_letter, sum_ind_letter],
+            [b_ind_letter],
+            ["freeIndices", "sumOverIndices"],
+            ["indicesOfB"],
+        )
+
+        return get_ten1_idx, get_ten2_idx
