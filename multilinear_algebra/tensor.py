@@ -172,6 +172,7 @@ class Tensor(TensorBasic):
 
         if n_t:
             return deepcopy(self)
+        return None
 
     def idx(self: TensorBasic, new_index: str, n_t: bool = False) -> Union[TensorBasic, None]:
         """give the object new indices
@@ -195,6 +196,7 @@ class Tensor(TensorBasic):
 
         if n_t:
             return deepcopy(self)
+        return None
 
     def get_random_values(
         self: TensorBasic, lower_bound: int = -10, upper_bound: int = 10, mode: str = "general"
@@ -342,6 +344,7 @@ class Tensor(TensorBasic):
             for key, value in self.value.items():
                 new_tensor.value[key] = value + other.value[key]
             return new_tensor
+        return None
 
     def __sub__(self: TensorBasic, other: TensorBasic) -> Union[TensorBasic, None]:
         """calculate the difference of two tensors
@@ -425,6 +428,74 @@ class Tensor(TensorBasic):
                     new_tensor.value[i_index] = ca.DM(new_val_help)
                 return new_tensor
             raise TypeError("indices are not suitable for multiplication!")
+        return None
+
+    @staticmethod
+    def print_multiplication(tensor1: TensorBasic, tensor2: TensorBasic) -> None:
+        """print the full multiplication table
+
+        Args:
+            tensor1 (TensorBasic): first tensor
+            tensor2 (TensorBasic): second tensor
+
+        Raises:
+            TypeError: index mismatch; Einstein summation rule can not be applied!
+
+        Returns:
+            _type_: _description_
+        """
+        if tensor1.is_scalar and tensor2.is_scalar:
+            print("not yet supported")
+
+        if tensor1.is_scalar and not tensor2.is_scalar:
+            print("not yet supported")
+
+        if not tensor1.is_scalar and tensor2.is_scalar:
+            print("not yet supported")
+
+        if not tensor1.is_scalar and not tensor2.is_scalar:
+            if Tensor.is_valid_indices(tensor1, tensor2, mode="multiplication"):
+                sum_over, free_indices, free_indices_order, _ = Tensor.get_indice_list(
+                    tensor1, tensor2
+                )
+
+                index_values_result = get_index_values(tensor1.dimension[0], len(free_indices))
+
+                def index_fun_result(idx_list: list) -> list:
+                    return [val + str(idx_list[i]) for i, val in enumerate(free_indices_order)]
+
+                name_result = "(" + tensor1.name + "*" + tensor2.name + ")"
+                index_values_sum_over = get_index_values(tensor1.dimension[0], len(sum_over))
+
+                def index_fun_ten(idx_list: list, tensor: TensorBasic) -> list:
+                    return [val + str(idx_list[i]) for i, val in enumerate(tensor.index_order)]
+
+                get_ten1_idx, get_ten2_idx = Tensor.get_index_projection(
+                    tensor1, tensor2, free_indices, sum_over
+                )
+
+                tab_raw = []
+                for i_index in index_values_result:
+                    help_sum = ""
+                    for i_sum_index in index_values_sum_over:
+                        a_ind = tuple(
+                            map(int, get_ten1_idx(i_index, i_sum_index).full().tolist()[0])
+                        )
+                        b_ind = tuple(
+                            map(int, get_ten2_idx(i_index, i_sum_index).full().tolist()[0])
+                        )
+                        ten1_ind = tensor1.name + "".join(index_fun_ten(list(a_ind), tensor1))
+                        ten2_ind = tensor2.name + "".join(index_fun_ten(list(b_ind), tensor2))
+                        help_sum += ten1_ind + " " + ten2_ind + " + "
+                    help_flag = [
+                        str(i_index),
+                        name_result + "".join(index_fun_result(list(i_index))),
+                        help_sum[:-2],
+                    ]
+                    tab_raw.append(help_flag)
+                print(tabulate(tab_raw, headers=["Index", "Symbol", "Value"]))
+            else:
+                raise TypeError("index mismatch; Einstein summation rule can not be applied!")
 
     @staticmethod
     def is_same_space(tensor1: TensorBasic, tensor2: TensorBasic) -> bool:
@@ -441,11 +512,15 @@ class Tensor(TensorBasic):
 
     @staticmethod
     def is_valid_indices(tensor1: TensorBasic, tensor2: TensorBasic, mode: str) -> bool:
-        """
-        check if the Einstein rule for multiplication can be applied
-        :param self:
-        :param other:
-        :return:
+        """check if the Einstein rule for multiplication can be applied
+
+        Args:
+            tensor1 (TensorBasic): first tensor
+            tensor2 (TensorBasic): second tensor
+            mode (str): addition | multiplication
+
+        Returns:
+            bool: are the indices valid for addition/multiplication
         """
         if mode == "addition":
             # indices of both terms must match

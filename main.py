@@ -21,13 +21,11 @@ if __name__ == "__main__":
         value={(0, 0): 1.1, (0, 1): -1.8, (1, 0): -1.5, (1, 1): 2.5},
     )
 
-    tensor1.idx("bc")
-    tensor2.idx("ab")
+    tensor1.idx("ab")
+    tensor2.idx("bc")
     bla = tensor2 * tensor1
+    ma.Tensor.print_multiplication(tensor1, tensor2)
 
     bla.print_components()
 
-    tensor2.idx("ab")
-    tensor1.idx("bc")
-    tensor12 = tensor2 * tensor1
-    bla = tensor1s + tensor1s
+    
