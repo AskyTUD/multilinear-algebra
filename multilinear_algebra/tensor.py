@@ -32,6 +32,7 @@ import random as rd
 from copy import deepcopy
 from typing import Any, Dict, List, Tuple, Union
 
+import numpy as np
 from casadi import casadi as ca  # type: ignore
 from tabulate import tabulate
 
@@ -356,7 +357,7 @@ class Tensor(TensorBasic):
         Returns:
             TensorBasic: new tensor
         """
-        return self + -other
+        return self + other.__neg__()
 
     def __mul__(self: TensorBasic, other: TensorBasic) -> Union[TensorBasic, None]:
         """multiplication of two tensors
@@ -419,10 +420,10 @@ class Tensor(TensorBasic):
                     new_val_help = 0
                     for i_sum_index in sum_indices_val:
                         a_ind = tuple(
-                            map(int, get_ten1_idx(i_index, i_sum_index).full().tolist()[0])
+                            map(int, np.array(get_ten1_idx(i_index, i_sum_index)).tolist()[0])
                         )
                         b_ind = tuple(
-                            map(int, get_ten2_idx(i_index, i_sum_index).full().tolist()[0])
+                            map(int, np.array(get_ten2_idx(i_index, i_sum_index)).tolist()[0])
                         )
                         new_val_help += self.value[a_ind] * other.value[b_ind]
                     new_tensor.value[i_index] = ca.DM(new_val_help)
@@ -479,10 +480,10 @@ class Tensor(TensorBasic):
                     help_sum = ""
                     for i_sum_index in index_values_sum_over:
                         a_ind = tuple(
-                            map(int, get_ten1_idx(i_index, i_sum_index).full().tolist()[0])
+                            map(int, np.array(get_ten1_idx(i_index, i_sum_index)).tolist()[0])
                         )
                         b_ind = tuple(
-                            map(int, get_ten2_idx(i_index, i_sum_index).full().tolist()[0])
+                            map(int, np.array(get_ten2_idx(i_index, i_sum_index)).tolist()[0])
                         )
                         ten1_ind = tensor1.name + "".join(index_fun_ten(list(a_ind), tensor1))
                         ten2_ind = tensor2.name + "".join(index_fun_ten(list(b_ind), tensor2))
